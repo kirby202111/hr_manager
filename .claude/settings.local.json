@@ -30,7 +30,19 @@
       "Bash(curl -s http://127.0.0.1:8001/leaves/)",
       "Bash(kill %1)",
       "Bash(uv --version)",
-      "Bash(uvicorn --version)"
+      "Bash(uvicorn --version)",
+      "Bash(.venv/Scripts/pip install *)",
+      "Bash(.venv/Scripts/python -m pip install openai pydantic-settings python-dotenv sse-starlette)",
+      "Bash(.venv/Scripts/python -c \"from app.agent.tools import ALL_TOOLS, TOOL_MAP, SYSTEM_PROMPT; print\\(f'Tools: {len\\(ALL_TOOLS\\)}'\\); print\\(f'Tool map: {len\\(TOOL_MAP\\)}'\\); print\\('System prompt length:', len\\(SYSTEM_PROMPT\\)\\)\")",
+      "Bash(.venv/Scripts/python -c \"from app.agent.protocol import BaseAgent, AgentTool, BaseHistoryStore; print\\('Protocol imports OK'\\)\")",
+      "Bash(.venv/Scripts/python -c \"from app.agent.history import InMemoryHistoryStore; store = InMemoryHistoryStore\\(\\); store.add_message\\('test', {'role': 'user', 'content': 'hi'}\\); print\\('History:', store.get_messages\\('test'\\)\\); print\\('Sessions:', store.list_sessions\\(\\)\\)\")",
+      "Bash(.venv/Scripts/python -c \"from app.agent.react_agent import ReActAgent; print\\('ReActAgent import OK'\\)\")",
+      "Bash(.venv/Scripts/python -c \"from main import app; routes = [r.path for r in app.routes]; print\\([r for r in routes if 'agent' in r]\\)\")",
+      "Bash(.venv/Scripts/python -m uvicorn main:app --host 127.0.0.1 --port 8000)",
+      "Bash(curl -s http://127.0.0.1:8000/)",
+      "Bash(curl -s http://127.0.0.1:8000/agent/sessions)",
+      "Bash(curl -s -X POST http://127.0.0.1:8000/agent/chat -H \"Content-Type: application/json\" -d '{\"message\": \"你好\"}')",
+      "Bash(.venv/Scripts/python -c ' *)"
     ]
   }
 }

@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.database import Base, engine
 from app.models import orm  # noqa: F401
 from app.routers import employee, department, attendance, leave, payroll, performance
+from app.agent import router as agent_router
 
 
 @asynccontextmanager
@@ -21,6 +22,7 @@ app.include_router(attendance.router)
 app.include_router(leave.router)
 app.include_router(payroll.router)
 app.include_router(performance.router)
+app.include_router(agent_router.router)
 
 
 @app.get("/")
