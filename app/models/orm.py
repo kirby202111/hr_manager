@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Time, inspect as sa_inspect
+from sqlalchemy import Date, DateTime, Float, Integer, String, Time, inspect as sa_inspect
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -26,7 +26,7 @@ class Employee(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    department_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     salary: Mapped[float] = mapped_column(Float, nullable=False)
 
     to_dict = _to_dict
@@ -36,7 +36,7 @@ class Attendance(Base):
     __tablename__ = "attendance"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id"), nullable=False)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     check_in: Mapped[time] = mapped_column(Time, nullable=False)
     check_out: Mapped[time | None] = mapped_column(Time, nullable=True)
@@ -50,7 +50,7 @@ class Leave(Base):
     __tablename__ = "leaves"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id"), nullable=False)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     leave_type: Mapped[str] = mapped_column(String, nullable=False)
     leave_type_name: Mapped[str] = mapped_column(String, nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -69,7 +69,7 @@ class Payroll(Base):
     __tablename__ = "payrolls"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id"), nullable=False)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     month: Mapped[str] = mapped_column(String, nullable=False)
     base_salary: Mapped[float] = mapped_column(Float, nullable=False)
     bonuses: Mapped[float] = mapped_column(Float, nullable=False, default=0)
@@ -100,8 +100,8 @@ class PerformanceReview(Base):
     __tablename__ = "performance_reviews"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id"), nullable=False)
-    cycle_id: Mapped[int] = mapped_column(Integer, ForeignKey("performance_cycles.id"), nullable=False)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    cycle_id: Mapped[int] = mapped_column(Integer, nullable=False)
     rating: Mapped[float] = mapped_column(Float, nullable=False)
     rating_level: Mapped[str] = mapped_column(String, nullable=False)
     reviewer: Mapped[str] = mapped_column(String, nullable=False)
