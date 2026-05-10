@@ -2,40 +2,118 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import AsyncIterator
 
 from openai import OpenAI, APIError, RateLimitError, APITimeoutError
 
 from app.config import settings
-from app.agent.protocol import BaseAgent, BaseHistoryStore
-from app.agent.tools import TOOL_MAP, ALL_TOOLS, SYSTEM_PROMPT
+from app.agent.protocol import AgentTool, BaseHistoryStore
+from app.agent.skill_registry import SkillRegistry
+from app.agent.skill_router import SkillRouter
+
+logger = logging.getLogger(__name__)
+
+SYSTEM_PROMPT = """你是一个专业的HR管理助手。你可以帮助用户查询员工信息、考勤记录、请假情况、薪资数据和绩效评估等。
+
+你的职责：
+1. 理解用户用自然语言提出的问题
+2. 调用相应的工具获取数据
+3. 用清晰、专业的中文回答用户的问题
+
+你可以执行以下操作：
+- 查询：员工、部门、考勤、请假、薪资、绩效等各类数据
+- 操作：创建员工、提交/审批请假、签到签退、生成/支付薪资、提交绩效评分等
+- 分析：薪资分布、考勤异常、请假趋势、绩效分布等
+- 工作流：新员工入职等组合操作
+
+注意事项：
+- 回答时使用中文
+- 如果数据量很大，只展示摘要和关键信息
+- 如果工具返回错误信息，向用户解释错误原因
+- 执行操作前请确认用户意图，避免误操作
+- 对于多步骤操作，先查询数据再逐个操作
+- 不要编造数据，只使用工具返回的真实数据
+"""
+
+
+def _workflow_to_tool(wf_name: str, wf_fn) -> AgentTool:
+    return AgentTool(
+        name=wf_name,
+        description=wf_fn.__doc__ or f"Execute {wf_name} workflow",
+        parameters={
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "员工姓名"},
+                "salary": {"type": "number", "description": "月薪"},
+                "department_id": {"type": "integer", "description": "部门ID（可选）"},
+            },
+            "required": ["name", "salary"],
+        },
+        fn=wf_fn,
+    )
 
 
 class ReActAgent:
-    def __init__(self, history_store: BaseHistoryStore) -> None:
+    def __init__(
+        self,
+        history_store: BaseHistoryStore,
+        skill_registry: SkillRegistry,
+        use_routing: bool = True,
+    ) -> None:
         self._history = history_store
         self._client = OpenAI(
             api_key=settings.deepseek_api_key,
             base_url=settings.deepseek_base_url,
         )
-        self._tools = [t.to_openai_tool() for t in ALL_TOOLS]
+        self._registry = skill_registry
+        self._router = SkillRouter(self._client, settings.deepseek_model)
+        self._use_routing = use_routing
 
     def _init_session(self, session_id: str) -> None:
         msgs = self._history.get_messages(session_id)
         if not msgs:
             self._history.add_message(session_id, {"role": "system", "content": SYSTEM_PROMPT})
 
+    def _resolve_tools(self, message: str) -> tuple[list[dict], dict[str, AgentTool]]:
+        if not self._use_routing:
+            all_tools = self._registry.get_all_tools()
+            tool_map = self._registry.get_tool_map()
+            return [t.to_openai_tool() for t in all_tools], tool_map
+
+        skill_names = self._router.route(
+            message, self._registry.get_skill_summaries()
+        )
+
+        if not skill_names:
+            skill_names = ["employee_management"]
+
+        activated_tools = self._registry.get_tools_for_skills(skill_names)
+        tool_map: dict[str, AgentTool] = {t.name: t for t in activated_tools}
+
+        workflows_map = self._registry.get_workflows_for_skills(skill_names)
+        for wf_name, skill in workflows_map.items():
+            wf_fn = skill.workflows[wf_name]
+            wf_tool = _workflow_to_tool(wf_name, wf_fn)
+            activated_tools.append(wf_tool)
+            tool_map[wf_name] = wf_tool
+
+        logger.info("Activated skills: %s, tools: %s", skill_names, list(tool_map.keys()))
+        return [t.to_openai_tool() for t in activated_tools], tool_map
+
     def chat(self, session_id: str, message: str) -> str:
         self._init_session(session_id)
         self._history.add_message(session_id, {"role": "user", "content": message})
         messages = self._history.get_messages(session_id)
+
+        tools, tool_map = self._resolve_tools(message)
 
         for _ in range(settings.agent_max_iterations):
             try:
                 response = self._client.chat.completions.create(
                     model=settings.deepseek_model,
                     messages=messages,
-                    tools=self._tools,
+                    tools=tools,
                     temperature=0.3,
                 )
             except RateLimitError:
@@ -56,7 +134,7 @@ class ReActAgent:
             for tool_call in assistant_msg["tool_calls"]:
                 func_name = tool_call["function"]["name"]
                 func_args = json.loads(tool_call["function"]["arguments"])
-                tool = TOOL_MAP.get(func_name)
+                tool = tool_map.get(func_name)
                 if tool is None:
                     result = {"error": f"未知工具: {func_name}"}
                 else:
@@ -78,13 +156,15 @@ class ReActAgent:
         self._init_session(session_id)
         self._history.add_message(session_id, {"role": "user", "content": message})
 
+        tools, tool_map = self._resolve_tools(message)
+
         for _ in range(settings.agent_max_iterations):
             messages = self._history.get_messages(session_id)
             try:
                 stream = self._client.chat.completions.create(
                     model=settings.deepseek_model,
                     messages=messages,
-                    tools=self._tools,
+                    tools=tools,
                     temperature=0.3,
                     stream=True,
                 )
@@ -146,7 +226,7 @@ class ReActAgent:
                 tc = tool_calls_accum[idx]
                 func_name = tc["name"]
                 func_args = json.loads(tc["arguments"])
-                tool = TOOL_MAP.get(func_name)
+                tool = tool_map.get(func_name)
                 if tool is None:
                     result = {"error": f"未知工具: {func_name}"}
                 else:

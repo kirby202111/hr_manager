@@ -1,3 +1,9 @@
+"""
+DEPRECATED: This module is replaced by the Skill system.
+
+Use app.agent.skills instead. This file is kept for backward compatibility
+and will be removed in a future version.
+"""
 from __future__ import annotations
 
 from datetime import date as date_type

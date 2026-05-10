@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     agent_max_iterations: int = 10
     agent_max_history_messages: int = 50
+    use_skill_routing: bool = True
 
     class Config:
         env_file = ".env"
