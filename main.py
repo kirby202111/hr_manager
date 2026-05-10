@@ -1,8 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
+from app.database import Base, engine
+from app.models import orm  # noqa: F401
 from app.routers import employee, department, attendance, leave, payroll, performance
 
-app = FastAPI(title="员工管理系统 API", version="2.0.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(title="员工管理系统 API", version="2.0.0", lifespan=lifespan)
 
 app.include_router(employee.router)
 app.include_router(department.router)

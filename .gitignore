@@ -30,6 +30,9 @@ coverage.xml
 .env
 .env.*
 
+# Database
+*.db
+
 # OS
 Thumbs.db
 Desktop.ini

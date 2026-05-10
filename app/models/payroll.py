@@ -1,43 +1,54 @@
-_payroll_db: dict[int, dict] = {}
-_next_id: int = 1
+from app.database import SessionLocal
+from app.models.orm import Payroll as PayrollORM
 
 
 def get_all_payrolls(employee_id: int | None = None, month: str | None = None, status: str | None = None) -> list[dict]:
-    records = list(_payroll_db.values())
-    if employee_id is not None:
-        records = [r for r in records if r["employee_id"] == employee_id]
-    if month is not None:
-        records = [r for r in records if r["month"] == month]
-    if status is not None:
-        records = [r for r in records if r["status"] == status]
-    return records
+    with SessionLocal() as session:
+        query = session.query(PayrollORM)
+        if employee_id is not None:
+            query = query.filter_by(employee_id=employee_id)
+        if month is not None:
+            query = query.filter_by(month=month)
+        if status is not None:
+            query = query.filter_by(status=status)
+        records = query.all()
+        return [r.to_dict() for r in records]
 
 
 def get_payroll_by_id(payroll_id: int) -> dict | None:
-    return _payroll_db.get(payroll_id)
+    with SessionLocal() as session:
+        record = session.get(PayrollORM, payroll_id)
+        return record.to_dict() if record else None
 
 
 def get_payroll_by_employee_month(employee_id: int, month: str) -> dict | None:
-    for r in _payroll_db.values():
-        if r["employee_id"] == employee_id and r["month"] == month:
-            return r
-    return None
+    with SessionLocal() as session:
+        record = session.query(PayrollORM).filter_by(employee_id=employee_id, month=month).first()
+        return record.to_dict() if record else None
 
 
 def get_payrolls_by_employee(employee_id: int) -> list[dict]:
-    return [r for r in _payroll_db.values() if r["employee_id"] == employee_id]
+    with SessionLocal() as session:
+        records = session.query(PayrollORM).filter_by(employee_id=employee_id).all()
+        return [r.to_dict() for r in records]
 
 
 def create_payroll(payroll_data: dict) -> dict:
-    global _next_id
-    record = {"id": _next_id, **payroll_data}
-    _payroll_db[_next_id] = record
-    _next_id += 1
-    return record
+    with SessionLocal() as session:
+        record = PayrollORM(**payroll_data)
+        session.add(record)
+        session.commit()
+        session.refresh(record)
+        return record.to_dict()
 
 
 def update_payroll(payroll_id: int, payroll_data: dict) -> dict | None:
-    if payroll_id not in _payroll_db:
-        return None
-    _payroll_db[payroll_id].update(payroll_data)
-    return _payroll_db[payroll_id]
+    with SessionLocal() as session:
+        record = session.get(PayrollORM, payroll_id)
+        if record is None:
+            return None
+        for k, v in payroll_data.items():
+            setattr(record, k, v)
+        session.commit()
+        session.refresh(record)
+        return record.to_dict()

@@ -1,39 +1,52 @@
-_departments_db: dict[int, dict] = {}
-_next_id: int = 1
+from app.database import SessionLocal
+from app.models.orm import Department as DepartmentORM
 
 
 def get_all_departments() -> list[dict]:
-    return list(_departments_db.values())
+    with SessionLocal() as session:
+        departments = session.query(DepartmentORM).all()
+        return [d.to_dict() for d in departments]
 
 
 def get_department_by_id(department_id: int) -> dict | None:
-    return _departments_db.get(department_id)
+    with SessionLocal() as session:
+        dept = session.get(DepartmentORM, department_id)
+        return dept.to_dict() if dept else None
 
 
 def get_department_by_name(name: str) -> dict | None:
-    for dept in _departments_db.values():
-        if dept["name"] == name:
-            return dept
-    return None
+    with SessionLocal() as session:
+        dept = session.query(DepartmentORM).filter_by(name=name).first()
+        return dept.to_dict() if dept else None
 
 
 def create_department(department_data: dict) -> dict:
-    global _next_id
-    department = {"id": _next_id, **department_data}
-    _departments_db[_next_id] = department
-    _next_id += 1
-    return department
+    with SessionLocal() as session:
+        dept = DepartmentORM(**department_data)
+        session.add(dept)
+        session.commit()
+        session.refresh(dept)
+        return dept.to_dict()
 
 
 def update_department(department_id: int, department_data: dict) -> dict | None:
-    if department_id not in _departments_db:
-        return None
-    _departments_db[department_id].update({k: v for k, v in department_data.items() if v is not None})
-    return _departments_db[department_id]
+    with SessionLocal() as session:
+        dept = session.get(DepartmentORM, department_id)
+        if dept is None:
+            return None
+        for k, v in department_data.items():
+            if v is not None:
+                setattr(dept, k, v)
+        session.commit()
+        session.refresh(dept)
+        return dept.to_dict()
 
 
 def delete_department(department_id: int) -> bool:
-    if department_id not in _departments_db:
-        return False
-    del _departments_db[department_id]
-    return True
+    with SessionLocal() as session:
+        dept = session.get(DepartmentORM, department_id)
+        if dept is None:
+            return False
+        session.delete(dept)
+        session.commit()
+        return True
