@@ -34,6 +34,9 @@ coverage.xml
 # Database
 *.db
 
+# Knowledge Base (ChromaDB)
+data/knowledge_base/
+
 # OS
 Thumbs.db
 Desktop.ini
