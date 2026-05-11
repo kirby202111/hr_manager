@@ -4,6 +4,8 @@ import calendar
 from datetime import date as date_type
 
 from app.agent.protocol import AgentTool, Skill, _safe
+from app.repositories import employee as employee_repo
+from app.repositories import department as department_repo
 from app.services import department as department_service
 from app.services import attendance as attendance_service
 from app.services import leave as leave_service
@@ -13,10 +15,9 @@ from app.services import performance as performance_service
 def _analyze_department_salary() -> dict:
     try:
         depts = department_service.list_departments()
-        from app.models import employee as employee_model
         result = []
         for dept in depts.departments:
-            employees = employee_model.get_employees_by_department(dept.id)
+            employees = employee_repo.get_employees_by_department(dept.id)
             if not employees:
                 result.append({
                     "department": dept.name,
@@ -41,13 +42,12 @@ def _analyze_department_salary() -> dict:
 
 def _analyze_attendance_anomalies(month: str) -> dict:
     try:
-        from app.models import employee as employee_model
         parts = month.split("-")
         year, m = int(parts[0]), int(parts[1])
         start = date_type(year, m, 1)
         end = date_type(year, m, calendar.monthrange(year, m)[1])
         anomalies = []
-        for emp in employee_model.get_all_employees():
+        for emp in employee_repo.get_all_employees():
             stats = attendance_service.get_employee_stats(emp["id"], start, end)
             if stats.late_days > 0 or stats.early_leave_days > 0 or stats.absent_days > 0:
                 anomalies.append({
@@ -66,7 +66,6 @@ def _analyze_attendance_anomalies(month: str) -> dict:
 def _analyze_leave_trends() -> dict:
     try:
         leaves = leave_service.list_leaves()
-        from app.models import employee as employee_model
         type_count: dict[str, int] = {}
         type_days: dict[str, int] = {}
         dept_count: dict[str, int] = {}
@@ -74,10 +73,9 @@ def _analyze_leave_trends() -> dict:
             lt = leave.leave_type
             type_count[lt] = type_count.get(lt, 0) + 1
             type_days[lt] = type_days.get(lt, 0) + leave.days
-            emp = employee_model.get_employee_by_id(leave.employee_id)
+            emp = employee_repo.get_employee_by_id(leave.employee_id)
             if emp and emp.get("department_id"):
-                from app.models import department as dept_model
-                dept = dept_model.get_department_by_id(emp["department_id"])
+                dept = department_repo.get_department_by_id(emp["department_id"])
                 if dept:
                     dept_count[dept["name"]] = dept_count.get(dept["name"], 0) + 1
         return {

@@ -1,52 +1,16 @@
-from app.database import SessionLocal
-from app.models.orm import Employee as EmployeeORM
+from sqlalchemy import Float, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+from app.models.base import _to_dict
 
 
-def get_all_employees() -> list[dict]:
-    with SessionLocal() as session:
-        employees = session.query(EmployeeORM).all()
-        return [e.to_dict() for e in employees]
+class Employee(Base):
+    __tablename__ = "employees"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    department_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    salary: Mapped[float] = mapped_column(Float, nullable=False)
 
-def get_employee_by_id(employee_id: int) -> dict | None:
-    with SessionLocal() as session:
-        emp = session.get(EmployeeORM, employee_id)
-        return emp.to_dict() if emp else None
-
-
-def get_employees_by_department(department_id: int) -> list[dict]:
-    with SessionLocal() as session:
-        employees = session.query(EmployeeORM).filter_by(department_id=department_id).all()
-        return [e.to_dict() for e in employees]
-
-
-def create_employee(employee_data: dict) -> dict:
-    with SessionLocal() as session:
-        emp = EmployeeORM(**employee_data)
-        session.add(emp)
-        session.commit()
-        session.refresh(emp)
-        return emp.to_dict()
-
-
-def update_employee(employee_id: int, employee_data: dict) -> dict | None:
-    with SessionLocal() as session:
-        emp = session.get(EmployeeORM, employee_id)
-        if emp is None:
-            return None
-        for k, v in employee_data.items():
-            if v is not None:
-                setattr(emp, k, v)
-        session.commit()
-        session.refresh(emp)
-        return emp.to_dict()
-
-
-def delete_employee(employee_id: int) -> bool:
-    with SessionLocal() as session:
-        emp = session.get(EmployeeORM, employee_id)
-        if emp is None:
-            return False
-        session.delete(emp)
-        session.commit()
-        return True
+    to_dict = _to_dict

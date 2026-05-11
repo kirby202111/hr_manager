@@ -1,10 +1,15 @@
 """模拟数据填充脚本 - 电子车间员工管理系统"""
 
+import os
 import random
+import sys
 from datetime import date, datetime, time, timedelta
 
+# Ensure project root is on sys.path so `app` is importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 from app.database import SessionLocal
-from app.models.orm import (
+from app.models import (
     Attendance,
     Department,
     Employee,

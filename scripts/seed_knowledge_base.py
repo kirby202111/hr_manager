@@ -1,10 +1,14 @@
 """知识库数据填充脚本 - 导入电子车间示例文档"""
 
 import os
+import sys
+
+# Ensure project root is on sys.path so `app` is importable
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from app.services.knowledge_base import add_document_from_file
 
-SAMPLE_DIR = os.path.join(os.path.dirname(__file__), "app", "knowledge_base", "sample_docs")
+SAMPLE_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "knowledge_base", "sample_docs")
 
 
 def main():

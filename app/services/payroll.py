@@ -2,11 +2,11 @@ from datetime import date, datetime
 
 from fastapi import HTTPException
 
-from app.models import attendance as attendance_model
-from app.models import department as department_model
-from app.models import employee as employee_model
-from app.models import leave as leave_model
-from app.models import payroll as payroll_model
+from app.repositories import attendance as attendance_repo
+from app.repositories import department as department_repo
+from app.repositories import employee as employee_repo
+from app.repositories import leave as leave_repo
+from app.repositories import payroll as payroll_repo
 from app.schemas.payroll import (
     PayrollCreate, PayrollUpdate, PayrollResponse,
     PayrollListResponse, PayslipDetail,
@@ -16,10 +16,10 @@ DAILY_SALARY_DIVISOR = 21.75
 
 
 def _fill_names(record: dict) -> dict:
-    emp = employee_model.get_employee_by_id(record["employee_id"])
+    emp = employee_repo.get_employee_by_id(record["employee_id"])
     record["employee_name"] = emp["name"] if emp else "Unknown"
     if emp and emp.get("department_id"):
-        dept = department_model.get_department_by_id(emp["department_id"])
+        dept = department_repo.get_department_by_id(emp["department_id"])
         record["department_name"] = dept["name"] if dept else None
     else:
         record["department_name"] = None
@@ -48,7 +48,7 @@ def _month_to_date_range(month: str) -> tuple[date, date]:
 
 def _calculate_attendance_deductions(employee_id: int, month: str, daily_salary: float) -> tuple[float, list[dict]]:
     start, end = _month_to_date_range(month)
-    records = attendance_model.get_all_attendance(employee_id, start, end)
+    records = attendance_repo.get_all_attendance(employee_id, start, end)
     deductions = 0.0
     details = []
     for r in records:
@@ -70,7 +70,7 @@ def _calculate_attendance_deductions(employee_id: int, month: str, daily_salary:
 
 def _calculate_leave_deductions(employee_id: int, month: str, daily_salary: float) -> tuple[float, list[dict]]:
     start, end = _month_to_date_range(month)
-    approved_leaves = leave_model.get_approved_leaves_in_range(employee_id, start, end)
+    approved_leaves = leave_repo.get_approved_leaves_in_range(employee_id, start, end)
     deductions = 0.0
     details = []
     for leave in approved_leaves:
@@ -90,26 +90,26 @@ def _calculate_leave_deductions(employee_id: int, month: str, daily_salary: floa
 
 
 def create_payroll(data: PayrollCreate) -> PayrollResponse:
-    emp = employee_model.get_employee_by_id(data.employee_id)
+    emp = employee_repo.get_employee_by_id(data.employee_id)
     if emp is None:
         raise HTTPException(status_code=404, detail=f"Employee {data.employee_id} not found")
     _parse_month(data.month)
-    existing = payroll_model.get_payroll_by_employee_month(data.employee_id, data.month)
+    existing = payroll_repo.get_payroll_by_employee_month(data.employee_id, data.month)
     if existing is not None:
         raise HTTPException(status_code=400, detail=f"Payroll for employee {data.employee_id} month {data.month} already exists")
     payroll_data = data.model_dump()
     payroll_data["net_salary"] = _calculate_net_salary(data.base_salary, data.bonuses, data.deductions)
     payroll_data["status"] = "draft"
     payroll_data["created_at"] = datetime.now()
-    record = payroll_model.create_payroll(payroll_data)
+    record = payroll_repo.create_payroll(payroll_data)
     return PayrollResponse(**_fill_names(record))
 
 
 def generate_monthly_payroll(month: str) -> list[PayrollResponse]:
     _parse_month(month)
     results = []
-    for emp in employee_model.get_all_employees():
-        existing = payroll_model.get_payroll_by_employee_month(emp["id"], month)
+    for emp in employee_repo.get_all_employees():
+        existing = payroll_repo.get_payroll_by_employee_month(emp["id"], month)
         if existing is not None:
             continue
         base_salary = emp["salary"]
@@ -128,13 +128,13 @@ def generate_monthly_payroll(month: str) -> list[PayrollResponse]:
             "payment_date": None,
             "created_at": datetime.now(),
         }
-        record = payroll_model.create_payroll(payroll_data)
+        record = payroll_repo.create_payroll(payroll_data)
         results.append(PayrollResponse(**_fill_names(record)))
     return results
 
 
 def list_payrolls(employee_id: int | None = None, month: str | None = None, status: str | None = None) -> PayrollListResponse:
-    records = payroll_model.get_all_payrolls(employee_id, month, status)
+    records = payroll_repo.get_all_payrolls(employee_id, month, status)
     return PayrollListResponse(
         payrolls=[PayrollResponse(**_fill_names(r)) for r in records],
         total=len(records),
@@ -142,14 +142,14 @@ def list_payrolls(employee_id: int | None = None, month: str | None = None, stat
 
 
 def get_payroll(payroll_id: int) -> PayrollResponse:
-    record = payroll_model.get_payroll_by_id(payroll_id)
+    record = payroll_repo.get_payroll_by_id(payroll_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Payroll {payroll_id} not found")
     return PayrollResponse(**_fill_names(record))
 
 
 def update_payroll(payroll_id: int, data: PayrollUpdate) -> PayrollResponse:
-    record = payroll_model.get_payroll_by_id(payroll_id)
+    record = payroll_repo.get_payroll_by_id(payroll_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Payroll {payroll_id} not found")
     if record["status"] != "draft":
@@ -158,31 +158,31 @@ def update_payroll(payroll_id: int, data: PayrollUpdate) -> PayrollResponse:
     bonuses = update_data.get("bonuses", record["bonuses"])
     deductions = update_data.get("deductions", record["deductions"])
     update_data["net_salary"] = _calculate_net_salary(record["base_salary"], bonuses, deductions)
-    updated = payroll_model.update_payroll(payroll_id, update_data)
+    updated = payroll_repo.update_payroll(payroll_id, update_data)
     return PayrollResponse(**_fill_names(updated))
 
 
 def pay_payroll(payroll_id: int) -> PayrollResponse:
-    record = payroll_model.get_payroll_by_id(payroll_id)
+    record = payroll_repo.get_payroll_by_id(payroll_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Payroll {payroll_id} not found")
     if record["status"] != "draft":
         raise HTTPException(status_code=400, detail="Only draft payroll can be paid")
     update_data = {"status": "paid", "payment_date": date.today()}
-    updated = payroll_model.update_payroll(payroll_id, update_data)
+    updated = payroll_repo.update_payroll(payroll_id, update_data)
     return PayrollResponse(**_fill_names(updated))
 
 
 def get_employee_payrolls(employee_id: int) -> list[PayrollResponse]:
-    emp = employee_model.get_employee_by_id(employee_id)
+    emp = employee_repo.get_employee_by_id(employee_id)
     if emp is None:
         raise HTTPException(status_code=404, detail=f"Employee {employee_id} not found")
-    records = payroll_model.get_payrolls_by_employee(employee_id)
+    records = payroll_repo.get_payrolls_by_employee(employee_id)
     return [PayrollResponse(**_fill_names(r)) for r in records]
 
 
 def get_payslip(payroll_id: int) -> PayslipDetail:
-    record = payroll_model.get_payroll_by_id(payroll_id)
+    record = payroll_repo.get_payroll_by_id(payroll_id)
     if record is None:
         raise HTTPException(status_code=404, detail=f"Payroll {payroll_id} not found")
     payroll_resp = PayrollResponse(**_fill_names(record))
@@ -194,14 +194,14 @@ def get_payslip(payroll_id: int) -> PayslipDetail:
         record["employee_id"], record["month"], daily_salary
     )
     start, end = _month_to_date_range(record["month"])
-    attendance_records = attendance_model.get_all_attendance(record["employee_id"], start, end)
+    attendance_records = attendance_repo.get_all_attendance(record["employee_id"], start, end)
     attendance_summary = {
         "total_days": (end - start).days + 1,
         "actual_days": len(attendance_records),
         "late_days": sum(1 for r in attendance_records if r["status"] == "late"),
         "early_leave_days": sum(1 for r in attendance_records if r["status"] == "early_leave"),
     }
-    approved_leaves = leave_model.get_approved_leaves_in_range(record["employee_id"], start, end)
+    approved_leaves = leave_repo.get_approved_leaves_in_range(record["employee_id"], start, end)
     leave_summary = {
         "total_leave_days": sum(r["days"] for r in approved_leaves),
         "sick_days": sum(r["days"] for r in approved_leaves if r["leave_type"] == "sick"),

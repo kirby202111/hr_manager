@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "sqlite:///./hr_system.db"
+    database_url: str = "sqlite:///./data/hr_system.db"
 
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com"

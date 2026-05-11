@@ -31,11 +31,9 @@ coverage.xml
 .env.local
 .env.*.local
 
-# Database
+# Database & runtime data
+data/
 *.db
-
-# Knowledge Base (ChromaDB)
-data/knowledge_base/
 
 # OS
 Thumbs.db

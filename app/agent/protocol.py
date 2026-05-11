@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Callable, Protocol, runtime_checkable
+from typing import AsyncIterator, Callable, Protocol, runtime_checkable
 
 from fastapi import HTTPException
 
@@ -36,16 +36,6 @@ class AgentTool:
                 "parameters": self.parameters,
             },
         }
-
-    def to_langchain_tool(self) -> Any:
-        from langchain_core.tools import StructuredTool
-
-        return StructuredTool.from_function(
-            name=self.name,
-            description=self.description,
-            args_schema=self.parameters,
-            func=self.fn,
-        )
 
 
 def _safe(fn, *args, **kwargs) -> dict:

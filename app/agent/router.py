@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -13,14 +14,20 @@ from app.agent.skill_registry import SkillRegistry
 from app.agent.skills import register_all_skills
 from app.config import settings
 
-_history_store: BaseHistoryStore = InMemoryHistoryStore()
-_skill_registry = SkillRegistry()
-register_all_skills(_skill_registry)
-_agent = ReActAgent(
-    _history_store,
-    _skill_registry,
-    use_routing=settings.use_skill_routing,
-)
+
+def create_agent() -> tuple[ReActAgent, SkillRegistry, BaseHistoryStore]:
+    history_store: BaseHistoryStore = InMemoryHistoryStore()
+    skill_registry = SkillRegistry()
+    register_all_skills(skill_registry)
+    agent = ReActAgent(
+        history_store,
+        skill_registry,
+        use_routing=settings.use_skill_routing,
+    )
+    return agent, skill_registry, history_store
+
+
+_agent, _skill_registry, _history_store = create_agent()
 
 router = APIRouter(prefix="/agent", tags=["AI助手"])
 

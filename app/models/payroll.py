@@ -1,54 +1,24 @@
-from app.database import SessionLocal
-from app.models.orm import Payroll as PayrollORM
+from datetime import date, datetime
+
+from sqlalchemy import Date, DateTime, Float, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+from app.models.base import _to_dict
 
 
-def get_all_payrolls(employee_id: int | None = None, month: str | None = None, status: str | None = None) -> list[dict]:
-    with SessionLocal() as session:
-        query = session.query(PayrollORM)
-        if employee_id is not None:
-            query = query.filter_by(employee_id=employee_id)
-        if month is not None:
-            query = query.filter_by(month=month)
-        if status is not None:
-            query = query.filter_by(status=status)
-        records = query.all()
-        return [r.to_dict() for r in records]
+class Payroll(Base):
+    __tablename__ = "payrolls"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    month: Mapped[str] = mapped_column(String, nullable=False)
+    base_salary: Mapped[float] = mapped_column(Float, nullable=False)
+    bonuses: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    deductions: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    net_salary: Mapped[float] = mapped_column(Float, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-def get_payroll_by_id(payroll_id: int) -> dict | None:
-    with SessionLocal() as session:
-        record = session.get(PayrollORM, payroll_id)
-        return record.to_dict() if record else None
-
-
-def get_payroll_by_employee_month(employee_id: int, month: str) -> dict | None:
-    with SessionLocal() as session:
-        record = session.query(PayrollORM).filter_by(employee_id=employee_id, month=month).first()
-        return record.to_dict() if record else None
-
-
-def get_payrolls_by_employee(employee_id: int) -> list[dict]:
-    with SessionLocal() as session:
-        records = session.query(PayrollORM).filter_by(employee_id=employee_id).all()
-        return [r.to_dict() for r in records]
-
-
-def create_payroll(payroll_data: dict) -> dict:
-    with SessionLocal() as session:
-        record = PayrollORM(**payroll_data)
-        session.add(record)
-        session.commit()
-        session.refresh(record)
-        return record.to_dict()
-
-
-def update_payroll(payroll_id: int, payroll_data: dict) -> dict | None:
-    with SessionLocal() as session:
-        record = session.get(PayrollORM, payroll_id)
-        if record is None:
-            return None
-        for k, v in payroll_data.items():
-            setattr(record, k, v)
-        session.commit()
-        session.refresh(record)
-        return record.to_dict()
+    to_dict = _to_dict
