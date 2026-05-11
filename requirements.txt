@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-openai
-pydantic-settings
-python-dotenv
-sse-starlette
