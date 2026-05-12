@@ -12,7 +12,9 @@ export const useSkillsStore = defineStore('skills', () => {
     try {
       const { data } = await skillsApi.getSkills()
       skills.value = data.skills
-    } catch { /* ignore */ }
+    } catch (e) {
+      console.error('获取技能列表失败:', e)
+    }
     loading.value = false
   }
 
