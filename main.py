@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.models import *  # noqa: F403 — register all ORM tables
@@ -16,6 +17,14 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="员工管理系统 API", version="2.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(employee.router)
 app.include_router(department.router)

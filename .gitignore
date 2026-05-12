@@ -35,6 +35,11 @@ coverage.xml
 data/
 *.db
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
 # OS
 Thumbs.db
 Desktop.ini
