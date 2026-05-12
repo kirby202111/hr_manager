@@ -27,7 +27,6 @@ app.include_router(performance.router)
 from app.agent.router import router as agent_router
 app.include_router(agent_router)
 
-
 @app.get("/")
 def read_root():
     return {"message": "员工管理系统 API v2.0"}
