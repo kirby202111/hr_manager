@@ -125,6 +125,8 @@ class ReActAgent:
 
             choice = response.choices[0]
             assistant_msg = choice.message.model_dump()
+            if getattr(choice.message, "reasoning_content", None):
+                assistant_msg["reasoning_content"] = choice.message.reasoning_content
             self._history.add_message(session_id, assistant_msg)
             messages = self._history.get_messages(session_id)
 
@@ -179,6 +181,7 @@ class ReActAgent:
                 return
 
             assistant_content = ""
+            reasoning_content = ""
             tool_calls_accum: dict[int, dict] = {}
 
             for chunk in stream:
@@ -189,6 +192,9 @@ class ReActAgent:
                 if delta.content:
                     yield {"event": "message", "data": delta.content}
                     assistant_content += delta.content
+
+                if getattr(delta, "reasoning_content", None):
+                    reasoning_content += delta.reasoning_content
 
                 if delta.tool_calls:
                     for tc_delta in delta.tool_calls:
@@ -204,6 +210,8 @@ class ReActAgent:
                                 tool_calls_accum[idx]["arguments"] += tc_delta.function.arguments
 
             assistant_msg: dict = {"role": "assistant", "content": assistant_content or None}
+            if reasoning_content:
+                assistant_msg["reasoning_content"] = reasoning_content
             if tool_calls_accum:
                 assistant_msg["tool_calls"] = [
                     {
