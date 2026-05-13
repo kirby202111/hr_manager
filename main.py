@@ -4,14 +4,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
+from app.database_migration import migrate_schema
 from app.models import *  # noqa: F403 — register all ORM tables
-from app.routers import employee, department, attendance, leave, payroll, performance, employee_skill
+from app.routers import employee, department, attendance, leave, payroll, performance, employee_skill, skill_catalog, project
 from app.agent.router import create_agent
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    migrate_schema()
     _app.state.agent, _app.state.skill_registry, _app.state.history_store = create_agent()
     yield
 
@@ -33,6 +35,8 @@ app.include_router(leave.router)
 app.include_router(payroll.router)
 app.include_router(performance.router)
 app.include_router(employee_skill.router)
+app.include_router(skill_catalog.router)
+app.include_router(project.router)
 
 from app.agent.router import router as agent_router
 app.include_router(agent_router)

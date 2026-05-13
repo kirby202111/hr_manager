@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class EmployeeSkillCreate(BaseModel):
     employee_id: int
     skill_name: str
+    skill_id: int | None = None
     proficiency_level: str
     years_of_experience: float | None = None
     certification: str | None = None
@@ -13,6 +14,7 @@ class EmployeeSkillCreate(BaseModel):
 
 class EmployeeSkillUpdate(BaseModel):
     skill_name: str | None = None
+    skill_id: int | None = None
     proficiency_level: str | None = None
     years_of_experience: float | None = None
     certification: str | None = None
@@ -23,6 +25,8 @@ class EmployeeSkillResponse(BaseModel):
     employee_id: int
     employee_name: str | None = None
     skill_name: str
+    skill_id: int | None = None
+    skill_category: str | None = None
     proficiency_level: str
     years_of_experience: float | None = None
     certification: str | None = None

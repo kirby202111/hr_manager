@@ -46,12 +46,13 @@ skill = Skill(
         ),
         AgentTool(
             name="create_skill",
-            description="为员工添加技能，需要提供员工ID、技能名称和熟练程度(beginner/intermediate/advanced/expert)",
+            description="为员工添加技能，需要提供员工ID、技能名称和熟练程度(beginner/intermediate/advanced/expert)，可选提供技能目录ID",
             parameters={
                 "type": "object",
                 "properties": {
                     "employee_id": {"type": "integer", "description": "员工ID"},
                     "skill_name": {"type": "string", "description": "技能名称"},
+                    "skill_id": {"type": "integer", "description": "技能目录ID（可选）"},
                     "proficiency_level": {
                         "type": "string",
                         "description": "熟练程度：beginner(入门)/intermediate(中级)/advanced(高级)/expert(专家)",
@@ -63,11 +64,12 @@ skill = Skill(
                 "required": ["employee_id", "skill_name", "proficiency_level"],
             },
             fn=lambda employee_id, skill_name, proficiency_level,
-                years_of_experience=None, certification=None: _safe(
+                skill_id=None, years_of_experience=None, certification=None: _safe(
                 skill_service.create_skill,
                 EmployeeSkillCreate(
                     employee_id=employee_id,
                     skill_name=skill_name,
+                    skill_id=skill_id,
                     proficiency_level=proficiency_level,
                     years_of_experience=years_of_experience,
                     certification=certification,
@@ -82,6 +84,7 @@ skill = Skill(
                 "properties": {
                     "skill_id": {"type": "integer", "description": "技能记录ID"},
                     "skill_name": {"type": "string", "description": "技能名称（可选）"},
+                    "skill_catalog_id": {"type": "integer", "description": "技能目录ID（可选）"},
                     "proficiency_level": {
                         "type": "string",
                         "description": "熟练程度（可选）：beginner/intermediate/advanced/expert",
@@ -92,12 +95,13 @@ skill = Skill(
                 },
                 "required": ["skill_id"],
             },
-            fn=lambda skill_id, skill_name=None, proficiency_level=None,
+            fn=lambda skill_id, skill_name=None, skill_catalog_id=None, proficiency_level=None,
                 years_of_experience=None, certification=None: _safe(
                 skill_service.update_skill,
                 skill_id,
                 EmployeeSkillUpdate(
                     skill_name=skill_name,
+                    skill_id=skill_catalog_id,
                     proficiency_level=proficiency_level,
                     years_of_experience=years_of_experience,
                     certification=certification,

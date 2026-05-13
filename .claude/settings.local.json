@@ -45,7 +45,10 @@
       "Bash(.venv/Scripts/python -c ' *)",
       "Bash(python -c \"from app.agent.skills import register_all_skills; from app.agent.skill_registry import SkillRegistry; r = SkillRegistry\\(\\); register_all_skills\\(r\\); print\\('Skills:', [s['name'] for s in r.list_skills\\(\\)]\\); print\\('Total tools:', len\\(r.get_all_tools\\(\\)\\)\\)\")",
       "Bash(python -c \"from app.agent.router import _agent, _skill_registry; print\\('Agent type:', type\\(_agent\\).__name__\\); print\\('Routing enabled:', _agent._use_routing\\); print\\('Skills:', [s['name'] for s in _skill_registry.list_skills\\(\\)]\\)\")",
-      "Bash(python -c \"from main import app; print\\(f'App OK: {app.title} v{app.version}'\\)\")"
+      "Bash(python -c \"from main import app; print\\(f'App OK: {app.title} v{app.version}'\\)\")",
+      "Bash(ls -la /cygdrive/d/hr_manager/app/agent/skills/)",
+      "Read(//cygdrive/d/hr_manager/app/agent/**)",
+      "Bash(dir \"d:\\\\hr_manager\\\\app\\\\agent\\\\skills\")"
     ]
   }
 }

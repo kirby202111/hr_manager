@@ -13,6 +13,7 @@ class EmployeeSkill(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     skill_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    skill_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     proficiency_level: Mapped[str] = mapped_column(String(20), nullable=False)
     years_of_experience: Mapped[float | None] = mapped_column(Float, nullable=True)
     certification: Mapped[str | None] = mapped_column(String, nullable=True)

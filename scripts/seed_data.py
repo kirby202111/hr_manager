@@ -8,16 +8,22 @@ from datetime import date, datetime, time, timedelta
 # Ensure project root is on sys.path so `app` is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import SessionLocal
+from app.database import SessionLocal, Base, engine
+from app.database_migration import migrate_schema
 from app.models import (
     Attendance,
     Department,
     Employee,
     EmployeeSkill,
+    SkillCatalog,
     Leave,
     Payroll,
     PerformanceCycle,
     PerformanceReview,
+    Project,
+    ProjectSkillRequirement,
+    ProjectMember,
+    ProjectTimesheet,
 )
 
 # ── 电子车间部门 ──────────────────────────────────────────────
@@ -125,6 +131,64 @@ DEPT_SKILLS = {
 }
 
 PROFICIENCY_LEVELS = ["beginner", "intermediate", "advanced", "expert"]
+
+# 技能分类映射
+SKILL_CATEGORIES = {
+    "SMT贴片操作": "生产操作",
+    "波峰焊操作": "生产操作",
+    "手工焊接": "生产操作",
+    "产品组装": "生产操作",
+    "功能测试": "生产操作",
+    "5S管理": "生产操作",
+    "IPC-A-610检验": "品质检验",
+    "来料检验(IQC)": "品质检验",
+    "示波器使用": "品质检验",
+    "SPC统计制程管控": "品质检验",
+    "万用表操作": "品质检验",
+    "AutoCAD": "工程技术",
+    "PLC编程": "工程技术",
+    "设备维修": "工程技术",
+    "SOP编制": "工程技术",
+    "FMEA分析": "工程技术",
+    "ERP系统操作": "仓储物流",
+    "叉车操作": "仓储物流",
+    "库存管理": "仓储物流",
+    "劳动法规": "行政管理",
+    "招聘面试": "行政管理",
+    "Office办公软件": "行政管理",
+    "C/C++": "研发技术",
+    "Python": "研发技术",
+    "Altium Designer": "研发技术",
+    "嵌入式开发": "研发技术",
+    "电路仿真": "研发技术",
+    "信号完整性分析": "研发技术",
+    "EMC设计": "研发技术",
+}
+
+# ── 项目种子数据 ──────────────────────────────────────────────
+PROJECTS_DATA = [
+    {
+        "name": "智能质检系统开发",
+        "description": "基于机器视觉的PCB板自动检测系统，替代人工目检",
+        "status": "active",
+        "start_date": date(2026, 3, 1),
+        "end_date": date(2026, 8, 31),
+    },
+    {
+        "name": "产线MES系统集成",
+        "description": "将现有生产线设备接入MES系统，实现生产数据实时采集",
+        "status": "active",
+        "start_date": date(2026, 4, 15),
+        "end_date": date(2026, 10, 31),
+    },
+    {
+        "name": "新产品NPI导入",
+        "description": "新一代通信模块的试产与量产导入",
+        "status": "planning",
+        "start_date": date(2026, 6, 1),
+        "end_date": date(2026, 12, 31),
+    },
+]
 
 
 def random_time_around(base_hour: int, base_minute: int, spread_minutes: int = 30) -> time:
@@ -421,7 +485,7 @@ def seed_performance(session, employees: list[dict]):
             session.add(review)
 
 
-def seed_skills(session, employees: list[dict]):
+def seed_skills(session, employees: list[dict], catalog_ids: dict[str, int]):
     """为每位员工生成 2~4 项技能"""
     for emp in employees:
         dept_name = emp["dept_name"]
@@ -452,9 +516,11 @@ def seed_skills(session, employees: list[dict]):
             if cert and random.random() < 0.4:
                 cert = None
 
+            skill_name = skill_data["skill_name"]
             record = EmployeeSkill(
                 employee_id=emp["id"],
-                skill_name=skill_data["skill_name"],
+                skill_name=skill_name,
+                skill_id=catalog_ids.get(skill_name),
                 proficiency_level=proficiency,
                 years_of_experience=years,
                 certification=cert,
@@ -463,8 +529,150 @@ def seed_skills(session, employees: list[dict]):
             session.add(record)
 
 
+def seed_skill_catalog(session) -> dict[str, int]:
+    """创建技能目录，返回 {技能名称: id}"""
+    catalog_ids = {}
+    # 收集所有唯一技能
+    all_skills = {}
+    for dept_skills in DEPT_SKILLS.values():
+        for s in dept_skills:
+            name = s["skill_name"]
+            if name not in all_skills:
+                all_skills[name] = SKILL_CATEGORIES.get(name)
+
+    for name, category in all_skills.items():
+        record = SkillCatalog(
+            name=name,
+            category=category,
+            created_at=datetime.now() - timedelta(days=random.randint(60, 365)),
+        )
+        session.add(record)
+
+    session.flush()
+    for sc in session.query(SkillCatalog).all():
+        catalog_ids[sc.name] = sc.id
+    return catalog_ids
+
+
+def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
+    """创建项目、技能需求、成员和工时记录"""
+    project_ids = []
+    for pd in PROJECTS_DATA:
+        project = Project(
+            **pd,
+            created_at=datetime.now() - timedelta(days=random.randint(30, 90)),
+        )
+        session.add(project)
+
+    session.flush()
+    for p in session.query(Project).all():
+        project_ids.append(p.id)
+
+    # 项目1: 智能质检系统 - 需要Python、嵌入式开发、IPC-A-610检验
+    req_data_1 = [
+        {"skill_id": catalog_ids["Python"], "required_proficiency": "advanced", "person_days": 30.0, "headcount": 2},
+        {"skill_id": catalog_ids["嵌入式开发"], "required_proficiency": "advanced", "person_days": 25.0, "headcount": 2},
+        {"skill_id": catalog_ids["IPC-A-610检验"], "required_proficiency": "intermediate", "person_days": 15.0, "headcount": 1},
+    ]
+    req_ids_1 = []
+    for rd in req_data_1:
+        req = ProjectSkillRequirement(
+            project_id=project_ids[0], **rd,
+            created_at=datetime.now() - timedelta(days=random.randint(20, 60)),
+        )
+        session.add(req)
+    session.flush()
+    for r in session.query(ProjectSkillRequirement).filter_by(project_id=project_ids[0]).all():
+        req_ids_1.append(r.id)
+
+    # 项目1成员: 选研发部和品质部员工
+    dev_employees = [e for e in employees if e["dept_name"] == "研发部"][:4]
+    qa_employees = [e for e in employees if e["dept_name"] == "品质部"][:2]
+    member_roles = ["算法工程师", "嵌入式工程师", "测试工程师", "前端开发", "品质顾问", "品质验证"]
+    member_list = dev_employees + qa_employees
+    member_ids_1 = []
+    for i, emp in enumerate(member_list):
+        member = ProjectMember(
+            project_id=project_ids[0],
+            employee_id=emp["id"],
+            role=member_roles[i] if i < len(member_roles) else "成员",
+            assigned_date=date(2026, 3, 1),
+            created_at=datetime.now() - timedelta(days=random.randint(20, 50)),
+        )
+        session.add(member)
+    session.flush()
+    for m in session.query(ProjectMember).filter_by(project_id=project_ids[0]).all():
+        member_ids_1.append(m.id)
+
+    # 项目1工时记录
+    for req_idx, req_id in enumerate(req_ids_1):
+        for member_idx, emp in enumerate(member_list[:3]):
+            for day_offset in range(0, random.randint(10, 30)):
+                work_date = date(2026, 4, 1) + timedelta(days=day_offset)
+                if work_date.weekday() >= 5:
+                    continue
+                if work_date > date.today():
+                    continue
+                ts = ProjectTimesheet(
+                    project_id=project_ids[0],
+                    requirement_id=req_id,
+                    employee_id=emp["id"],
+                    date=work_date,
+                    hours=round(random.uniform(4, 8), 1),
+                    description=f"项目开发工作",
+                    created_at=datetime.now() - timedelta(days=random.randint(1, 30)),
+                )
+                session.add(ts)
+
+    # 项目2: MES系统集成 - 需要C/C++、PLC编程、ERP系统操作
+    req_data_2 = [
+        {"skill_id": catalog_ids["C/C++"], "required_proficiency": "advanced", "person_days": 20.0, "headcount": 2},
+        {"skill_id": catalog_ids["PLC编程"], "required_proficiency": "advanced", "person_days": 25.0, "headcount": 1},
+        {"skill_id": catalog_ids["ERP系统操作"], "required_proficiency": "intermediate", "person_days": 10.0, "headcount": 1},
+    ]
+    for rd in req_data_2:
+        req = ProjectSkillRequirement(
+            project_id=project_ids[1], **rd,
+            created_at=datetime.now() - timedelta(days=random.randint(10, 30)),
+        )
+        session.add(req)
+
+    # 项目2成员
+    eng_employees = [e for e in employees if e["dept_name"] == "工程部"][:2]
+    wh_employees = [e for e in employees if e["dept_name"] == "仓储物流部"][:1]
+    dev2_employees = [e for e in employees if e["dept_name"] == "研发部"][4:6]
+    mes_roles = ["软件工程师", "PLC工程师", "ERP顾问", "C++开发"]
+    mes_members = eng_employees + wh_employees + dev2_employees
+    for i, emp in enumerate(mes_members):
+        member = ProjectMember(
+            project_id=project_ids[1],
+            employee_id=emp["id"],
+            role=mes_roles[i] if i < len(mes_roles) else "成员",
+            assigned_date=date(2026, 4, 15),
+            created_at=datetime.now() - timedelta(days=random.randint(5, 20)),
+        )
+        session.add(member)
+
+    # 项目3: 新产品NPI - 暂无成员和工时（planning状态）
+    req_data_3 = [
+        {"skill_id": catalog_ids["SMT贴片操作"], "required_proficiency": "advanced", "person_days": 20.0, "headcount": 3},
+        {"skill_id": catalog_ids["波峰焊操作"], "required_proficiency": "intermediate", "person_days": 10.0, "headcount": 2},
+        {"skill_id": catalog_ids["功能测试"], "required_proficiency": "advanced", "person_days": 15.0, "headcount": 2},
+    ]
+    for rd in req_data_3:
+        req = ProjectSkillRequirement(
+            project_id=project_ids[2], **rd,
+            created_at=datetime.now() - timedelta(days=random.randint(1, 10)),
+        )
+        session.add(req)
+
+
 def main():
     random.seed(42)  # 固定种子保证可复现
+
+    # 确保所有表存在
+    Base.metadata.create_all(bind=engine)
+    migrate_schema()
 
     with SessionLocal() as session:
         # 清空所有表
@@ -477,6 +685,10 @@ def main():
         print("正在创建员工...")
         employees = seed_employees(session, dept_ids)
         print(f"  共创建 {len(employees)} 名员工")
+
+        print("正在创建技能目录...")
+        catalog_ids = seed_skill_catalog(session)
+        print(f"  共创建 {len(catalog_ids)} 项技能")
 
         print("正在生成考勤记录...")
         seed_attendance(session, employees)
@@ -491,7 +703,10 @@ def main():
         seed_performance(session, employees)
 
         print("正在生成员工技能记录...")
-        seed_skills(session, employees)
+        seed_skills(session, employees, catalog_ids)
+
+        print("正在生成项目数据...")
+        seed_projects(session, employees, catalog_ids)
 
         session.commit()
 
@@ -500,12 +715,17 @@ def main():
         counts = {
             "部门": session.query(Department).count(),
             "员工": session.query(Employee).count(),
+            "技能目录": session.query(SkillCatalog).count(),
             "考勤": session.query(Attendance).count(),
             "请假": session.query(Leave).count(),
             "薪资": session.query(Payroll).count(),
             "考核周期": session.query(PerformanceCycle).count(),
             "绩效评分": session.query(PerformanceReview).count(),
             "员工技能": session.query(EmployeeSkill).count(),
+            "项目": session.query(Project).count(),
+            "技能需求": session.query(ProjectSkillRequirement).count(),
+            "项目成员": session.query(ProjectMember).count(),
+            "工时记录": session.query(ProjectTimesheet).count(),
         }
         print("\n模拟数据创建完成！")
         for k, v in counts.items():
@@ -513,5 +733,4 @@ def main():
 
 
 if __name__ == "__main__":
-    from app.database import Base
     main()

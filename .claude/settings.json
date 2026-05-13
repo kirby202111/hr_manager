@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(dir d:\\\\hr_manager /b)",
-      "Bash(dir \"d:\\\\hr_manager\")"
+      "Bash(dir \"d:\\\\hr_manager\")",
+      "Bash(xargs grep -l \"skill\")"
     ]
   }
 }
