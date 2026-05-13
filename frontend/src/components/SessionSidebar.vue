@@ -36,23 +36,20 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Plus, Delete, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { useChatStore } from '../stores/chat'
 import SkillPanel from './SkillPanel.vue'
 
 const store = useChatStore()
-const sessions = store.sessions
-const currentSessionId = store.currentSessionId
-const selectSession = store.selectSession
-const createSession = store.createSession
-const deleteSession = store.deleteSession
-const messages = store.messages
+const { sessions, currentSessionId, messages } = storeToRefs(store)
+const { selectSession, createSession, deleteSession } = store
 
 const showSkills = ref(false)
 
 function getSessionLabel(sid: string): string {
-  const msgs = messages[sid]
+  const msgs = messages.value[sid]
   if (msgs && msgs.length > 0) {
     const first = msgs.find(m => m.role === 'user')
     if (first) return first.content.slice(0, 20) + (first.content.length > 20 ? '...' : '')
@@ -71,7 +68,7 @@ async function handleDelete(sid: string) {
       cancelButtonText: '取消',
       type: 'warning',
     })
-    deleteSession(sid)
+    await deleteSession(sid)
   } catch { /* cancelled */ }
 }
 </script>
