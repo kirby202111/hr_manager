@@ -1,6 +1,7 @@
 from app.agent.protocol import Skill
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skills.core import skill as core_skill
+from app.agent.skills.employee_skill import skill as employee_skill_skill
 from app.agent.skills.onboarding import skill as onboarding_skill
 from app.agent.skills.leave import skill as leave_skill
 from app.agent.skills.attendance import skill as attendance_skill
@@ -12,6 +13,7 @@ from app.agent.skills.knowledge_base import skill as knowledge_base_skill
 
 _ALL_SKILLS: list[Skill] = [
     core_skill,
+    employee_skill_skill,
     onboarding_skill,
     leave_skill,
     attendance_skill,

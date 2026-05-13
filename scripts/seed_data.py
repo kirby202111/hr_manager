@@ -13,6 +13,7 @@ from app.models import (
     Attendance,
     Department,
     Employee,
+    EmployeeSkill,
     Leave,
     Payroll,
     PerformanceCycle,
@@ -77,6 +78,53 @@ LEAVE_REASONS = {
 }
 
 LEAVE_STATUSES = ["approved", "approved", "approved", "pending", "rejected"]
+
+# ── 员工技能配置 ────────────────────────────────────────────────
+DEPT_SKILLS = {
+    "生产部": [
+        {"skill_name": "SMT贴片操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "波峰焊操作", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "手工焊接", "proficiency_level": "expert", "years_of_experience": None, "certification": "IPC-A-610"},
+        {"skill_name": "产品组装", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "功能测试", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "5S管理", "proficiency_level": "beginner", "years_of_experience": None, "certification": None},
+    ],
+    "品质部": [
+        {"skill_name": "IPC-A-610检验", "proficiency_level": "expert", "years_of_experience": None, "certification": "IPC-A-610 CIS"},
+        {"skill_name": "来料检验(IQC)", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "示波器使用", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "SPC统计制程管控", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "万用表操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+    ],
+    "工程部": [
+        {"skill_name": "AutoCAD", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "PLC编程", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "设备维修", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "SOP编制", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
+        {"skill_name": "FMEA分析", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+    ],
+    "仓储物流部": [
+        {"skill_name": "ERP系统操作", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "叉车操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": "叉车操作证"},
+        {"skill_name": "库存管理", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+    ],
+    "行政人事部": [
+        {"skill_name": "劳动法规", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "招聘面试", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "Office办公软件", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
+    ],
+    "研发部": [
+        {"skill_name": "C/C++", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "Python", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "Altium Designer", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
+        {"skill_name": "嵌入式开发", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {"skill_name": "电路仿真", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {"skill_name": "信号完整性分析", "proficiency_level": "beginner", "years_of_experience": None, "certification": None},
+        {"skill_name": "EMC设计", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+    ],
+}
+
+PROFICIENCY_LEVELS = ["beginner", "intermediate", "advanced", "expert"]
 
 
 def random_time_around(base_hour: int, base_minute: int, spread_minutes: int = 30) -> time:
@@ -373,6 +421,48 @@ def seed_performance(session, employees: list[dict]):
             session.add(review)
 
 
+def seed_skills(session, employees: list[dict]):
+    """为每位员工生成 2~4 项技能"""
+    for emp in employees:
+        dept_name = emp["dept_name"]
+        dept_skills = DEPT_SKILLS.get(dept_name, [])
+        if not dept_skills:
+            continue
+
+        # 每位员工随机分配 2~4 项技能
+        skill_count = min(random.randint(2, 4), len(dept_skills))
+        chosen = random.sample(dept_skills, skill_count)
+
+        for skill_data in chosen:
+            # 随机调整熟练程度（与模板有差异）
+            level = skill_data["proficiency_level"]
+            level_idx = PROFICIENCY_LEVELS.index(level)
+            level_idx = max(0, min(len(PROFICIENCY_LEVELS) - 1, level_idx + random.randint(-1, 1)))
+            proficiency = PROFICIENCY_LEVELS[level_idx]
+
+            # 随机生成年限
+            years = round(random.uniform(0.5, 10.0), 1)
+            if proficiency == "beginner":
+                years = round(random.uniform(0.5, 2.0), 1)
+            elif proficiency == "expert":
+                years = round(random.uniform(5.0, 15.0), 1)
+
+            # 保留模板中的认证，或随机清除
+            cert = skill_data["certification"]
+            if cert and random.random() < 0.4:
+                cert = None
+
+            record = EmployeeSkill(
+                employee_id=emp["id"],
+                skill_name=skill_data["skill_name"],
+                proficiency_level=proficiency,
+                years_of_experience=years,
+                certification=cert,
+                created_at=datetime.now() - timedelta(days=random.randint(30, 365)),
+            )
+            session.add(record)
+
+
 def main():
     random.seed(42)  # 固定种子保证可复现
 
@@ -400,6 +490,9 @@ def main():
         print("正在生成绩效考核记录...")
         seed_performance(session, employees)
 
+        print("正在生成员工技能记录...")
+        seed_skills(session, employees)
+
         session.commit()
 
     # 统计
@@ -412,6 +505,7 @@ def main():
             "薪资": session.query(Payroll).count(),
             "考核周期": session.query(PerformanceCycle).count(),
             "绩效评分": session.query(PerformanceReview).count(),
+            "员工技能": session.query(EmployeeSkill).count(),
         }
         print("\n模拟数据创建完成！")
         for k, v in counts.items():
