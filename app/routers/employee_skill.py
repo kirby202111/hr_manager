@@ -21,6 +21,11 @@ def list_skills_by_employee(employee_id: int):
     return skill_service.list_skills_by_employee(employee_id)
 
 
+@router.get("/by-skill/{skill_name}", response_model=EmployeeSkillListResponse)
+def list_employees_by_skill(skill_name: str):
+    return skill_service.list_employees_by_skill(skill_name)
+
+
 @router.get("/{skill_id}", response_model=EmployeeSkillResponse)
 def get_skill(skill_id: int):
     return skill_service.get_skill(skill_id)

@@ -35,6 +35,16 @@ skill = Skill(
             fn=lambda employee_id: _safe(skill_service.list_skills_by_employee, employee_id),
         ),
         AgentTool(
+            name="query_employees_by_skill",
+            description="根据技能名称查询拥有该技能的所有员工，支持模糊匹配",
+            parameters={
+                "type": "object",
+                "properties": {"skill_name": {"type": "string", "description": "技能名称（支持模糊搜索）"}},
+                "required": ["skill_name"],
+            },
+            fn=lambda skill_name: _safe(skill_service.list_employees_by_skill, skill_name),
+        ),
+        AgentTool(
             name="create_skill",
             description="为员工添加技能，需要提供员工ID、技能名称和熟练程度(beginner/intermediate/advanced/expert)",
             parameters={

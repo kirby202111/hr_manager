@@ -20,6 +20,14 @@ def get_skills_by_employee(employee_id: int) -> list[dict]:
         return [s.to_dict() for s in skills]
 
 
+def get_skills_by_name(skill_name: str) -> list[dict]:
+    with SessionLocal() as session:
+        skills = session.query(EmployeeSkillORM).filter(
+            EmployeeSkillORM.skill_name.contains(skill_name)
+        ).all()
+        return [s.to_dict() for s in skills]
+
+
 def create_skill(skill_data: dict) -> dict:
     with SessionLocal() as session:
         skill = EmployeeSkillORM(**skill_data)

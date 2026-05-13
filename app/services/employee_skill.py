@@ -35,6 +35,14 @@ def list_skills_by_employee(employee_id: int) -> EmployeeSkillListResponse:
     )
 
 
+def list_employees_by_skill(skill_name: str) -> EmployeeSkillListResponse:
+    skills = skill_repo.get_skills_by_name(skill_name)
+    return EmployeeSkillListResponse(
+        skills=[EmployeeSkillResponse(**_fill_employee_name(s)) for s in skills],
+        total=len(skills),
+    )
+
+
 def get_skill(skill_id: int) -> EmployeeSkillResponse:
     skill = skill_repo.get_skill_by_id(skill_id)
     if skill is None:
