@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.models import *  # noqa: F403 — register all ORM tables
-from app.routers import employee, department, attendance, leave, payroll, performance
+from app.routers import employee, department, attendance, leave, payroll, performance, employee_skill
 from app.agent.router import create_agent
 
 
@@ -32,6 +32,7 @@ app.include_router(attendance.router)
 app.include_router(leave.router)
 app.include_router(payroll.router)
 app.include_router(performance.router)
+app.include_router(employee_skill.router)
 
 from app.agent.router import router as agent_router
 app.include_router(agent_router)
