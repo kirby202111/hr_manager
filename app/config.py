@@ -1,7 +1,9 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
     database_url: str = "sqlite:///./data/hr_system.db"
 
     deepseek_api_key: str = ""
@@ -20,10 +22,6 @@ class Settings(BaseSettings):
     knowledge_base_chunk_size: int = 500
     knowledge_base_chunk_overlap: int = 100
     knowledge_base_search_top_k: int = 5
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 settings = Settings()
