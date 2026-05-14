@@ -9,6 +9,7 @@ from app.agent.skills.payroll import skill as payroll_skill
 from app.agent.skills.analytics import skill as analytics_skill
 from app.agent.skills.knowledge_base import skill as knowledge_base_skill
 from app.agent.skills.project import skill as project_skill
+from app.agent.skills.memory import skill as memory_skill
 
 
 _ALL_SKILLS: list[Skill] = [
@@ -21,6 +22,7 @@ _ALL_SKILLS: list[Skill] = [
     analytics_skill,
     knowledge_base_skill,
     project_skill,
+    memory_skill,
 ]
 
 

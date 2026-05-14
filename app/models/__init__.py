@@ -6,6 +6,7 @@ from app.models.attendance import Attendance
 from app.models.leave import Leave
 from app.models.payroll import Payroll
 from app.models.project import Project, ProjectSkillRequirement, ProjectMember, ProjectTimesheet
+from app.models.agent_memory import AgentMemory, MemoryReminder, ConversationMessage
 
 __all__ = [
     "Department",
@@ -19,4 +20,7 @@ __all__ = [
     "ProjectSkillRequirement",
     "ProjectMember",
     "ProjectTimesheet",
+    "AgentMemory",
+    "MemoryReminder",
+    "ConversationMessage",
 ]

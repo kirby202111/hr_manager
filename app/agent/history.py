@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import threading
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from app.config import settings
 from app.agent.protocol import BaseHistoryStore
@@ -32,3 +34,48 @@ class InMemoryHistoryStore:
     def list_sessions(self) -> list[str]:
         with self._lock:
             return list(self._conversations.keys())
+
+
+class SQLiteHistoryStore:
+    def __init__(self) -> None:
+        from app.repositories import agent_memory as repo
+        self._repo = repo
+
+    def get_messages(self, session_id: str) -> list[dict]:
+        rows = self._repo.get_messages_by_session(session_id)
+        messages = []
+        for row in rows:
+            msg: dict = {"role": row["role"]}
+            if row["content"] is not None:
+                msg["content"] = row["content"]
+            if row.get("tool_call_id"):
+                msg["tool_call_id"] = row["tool_call_id"]
+            if row.get("tool_calls"):
+                msg["tool_calls"] = json.loads(row["tool_calls"])
+            if row.get("reasoning_content"):
+                msg["reasoning_content"] = row["reasoning_content"]
+            messages.append(msg)
+        return messages
+
+    def add_message(self, session_id: str, message: dict) -> None:
+        now = datetime.now(timezone.utc)
+        data = {
+            "session_id": session_id,
+            "role": message.get("role", "user"),
+            "content": message.get("content"),
+            "tool_call_id": message.get("tool_call_id"),
+            "tool_calls": json.dumps(message["tool_calls"], ensure_ascii=False) if message.get("tool_calls") else None,
+            "reasoning_content": message.get("reasoning_content"),
+            "created_at": now,
+        }
+        self._repo.create_message(data)
+
+        count = self._repo.count_messages_by_session(session_id)
+        if count > settings.agent_max_history_messages:
+            self._repo.trim_session_messages(session_id, settings.agent_max_history_messages)
+
+    def clear(self, session_id: str) -> None:
+        self._repo.delete_messages_by_session(session_id)
+
+    def list_sessions(self) -> list[str]:
+        return self._repo.list_sessions()
