@@ -1,9 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir d:\\\\hr_manager /b)",
-      "Bash(dir \"d:\\\\hr_manager\")",
-      "Bash(xargs grep -l \"skill\")"
+      "Bash(curl *)",
+      "Bash(uvicorn *)",
+      "Bash(python *)",
+      "Bash(dir *)",
+      "Bash(findstr *)",
+      "Bash(xargs *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }

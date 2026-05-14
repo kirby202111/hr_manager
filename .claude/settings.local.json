@@ -48,7 +48,8 @@
       "Bash(python -c \"from main import app; print\\(f'App OK: {app.title} v{app.version}'\\)\")",
       "Bash(ls -la /cygdrive/d/hr_manager/app/agent/skills/)",
       "Read(//cygdrive/d/hr_manager/app/agent/**)",
-      "Bash(dir \"d:\\\\hr_manager\\\\app\\\\agent\\\\skills\")"
+      "Bash(dir \"d:\\\\hr_manager\\\\app\\\\agent\\\\skills\")",
+      "Bash(python -c \"from app.models import AgentMemory, MemoryReminder, ConversationMessage; print\\('Models imported OK'\\)\")"
     ]
   }
 }

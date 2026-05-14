@@ -3,13 +3,12 @@ from __future__ import annotations
 import calendar
 from datetime import date as date_type
 
-from app.agent.protocol import AgentTool, Skill, _safe
+from app.agent.protocol import AgentTool, Skill
 from app.repositories import employee as employee_repo
 from app.repositories import department as department_repo
 from app.services import department as department_service
 from app.services import attendance as attendance_service
 from app.services import leave as leave_service
-from app.services import performance as performance_service
 
 
 def _analyze_department_salary() -> dict:
@@ -87,22 +86,6 @@ def _analyze_leave_trends() -> dict:
         return {"error": str(e)}
 
 
-def _analyze_performance_distribution() -> dict:
-    try:
-        reviews = performance_service.list_reviews()
-        dist: dict[str, int] = {}
-        for r in reviews.reviews:
-            level = r.rating_level
-            dist[level] = dist.get(level, 0) + 1
-        total = reviews.total
-        return {
-            "distribution": {k: {"count": v, "percentage": round(v / total * 100, 1)} for k, v in dist.items()},
-            "total_reviews": total,
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
-
 skill = Skill(
     name="analytics",
     description="HR数据分析与统计",
@@ -131,12 +114,6 @@ skill = Skill(
             description="分析请假趋势，按类型、部门统计请假情况",
             parameters={"type": "object", "properties": {}, "required": []},
             fn=lambda: _analyze_leave_trends(),
-        ),
-        AgentTool(
-            name="analyze_performance_distribution",
-            description="分析绩效评分分布，按等级统计人数和占比",
-            parameters={"type": "object", "properties": {}, "required": []},
-            fn=lambda: _analyze_performance_distribution(),
         ),
     ],
 )

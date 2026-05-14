@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -9,14 +8,14 @@ from pydantic import BaseModel
 
 from app.agent.protocol import BaseHistoryStore
 from app.agent.react_agent import ReActAgent
-from app.agent.history import InMemoryHistoryStore
+from app.agent.history import SQLiteHistoryStore
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skills import register_all_skills
 from app.config import settings
 
 
 def create_agent() -> tuple[ReActAgent, SkillRegistry, BaseHistoryStore]:
-    history_store: BaseHistoryStore = InMemoryHistoryStore()
+    history_store: BaseHistoryStore = SQLiteHistoryStore()
     skill_registry = SkillRegistry()
     register_all_skills(skill_registry)
     agent = ReActAgent(
@@ -35,6 +34,7 @@ router = APIRouter(prefix="/agent", tags=["AI助手"])
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    user_tag: str | None = None
 
 
 class ChatResponse(BaseModel):
@@ -45,8 +45,9 @@ class ChatResponse(BaseModel):
 @router.post("/chat", response_model=ChatResponse)
 def chat_endpoint(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
+    user_tag = req.user_tag or settings.default_user_tag
     try:
-        reply = _agent.chat(session_id, req.message)
+        reply = _agent.chat(session_id, req.message, user_tag=user_tag)
         return ChatResponse(session_id=session_id, reply=reply)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI助手错误: {str(e)}")
@@ -55,9 +56,10 @@ def chat_endpoint(req: ChatRequest):
 @router.post("/chat/stream")
 async def chat_stream_endpoint(req: ChatRequest):
     session_id = req.session_id or str(uuid.uuid4())
+    user_tag = req.user_tag or settings.default_user_tag
 
     async def event_generator():
-        async for event in _agent.chat_stream(session_id, req.message):
+        async for event in _agent.chat_stream(session_id, req.message, user_tag=user_tag):
             yield f"event: {event['event']}\ndata: {event['data']}\n\n"
 
     return StreamingResponse(
