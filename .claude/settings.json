@@ -8,7 +8,12 @@
       "Bash(findstr *)",
       "Bash(xargs *)",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(ls -la /app/services/ 2>/dev/null || ls -la app/services/)",
+      "Read(//app/**)",
+      "Bash(ls -la /app/schemas/ 2>/dev/null || ls -la app/schemas/)",
+      "Bash(ruff check *)",
+      "Bash(ruff format *)"
     ]
   }
 }
