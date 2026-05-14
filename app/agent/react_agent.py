@@ -182,6 +182,23 @@ class ReActAgent:
     def _inject_memory_context(self, session_id: str, user_tag: str) -> None:
         from app.services import agent_memory as memory_service
         try:
+            # 告知 LLM 当前用户的 user_tag，使其能正确调用记忆工具
+            self._history.add_message(session_id, {
+                "role": "system",
+                "content": f"当前用户的标识(user_tag)为：{user_tag}。在调用recall_memories、save_memory、check_reminders等记忆工具时，请使用此user_tag。",
+            })
+
+            # 自动注入最近的重要记忆，避免完全依赖 Agent 主动查询
+            recent = memory_service.recall_memories(user_tag, limit=5)
+            if recent.memories:
+                lines = ["以下是该用户的近期记忆："]
+                for m in recent.memories:
+                    lines.append(f"- [{m.memory_type}/{m.category}] {m.content}")
+                self._history.add_message(session_id, {
+                    "role": "system",
+                    "content": "\n".join(lines),
+                })
+
             reminders = memory_service.check_pending_reminders(user_tag)
             if reminders.reminders:
                 lines = ["你有以下待办提醒："]
@@ -195,6 +212,9 @@ class ReActAgent:
         except Exception as e:
             logger.warning("Failed to inject memory context: %s", e)
 
+    # memory 技能始终激活，不参与路由筛选
+    _ALWAYS_ON_SKILLS = {"memory"}
+
     def _resolve_tools(self, message: str) -> tuple[list[dict], dict[str, AgentTool]]:
         if not self._use_routing:
             all_tools = self._registry.get_all_tools()
@@ -207,6 +227,8 @@ class ReActAgent:
 
         if not skill_names:
             skill_names = ["employee_management"]
+
+        skill_names = list(set(skill_names) | self._ALWAYS_ON_SKILLS)
 
         activated_tools = self._registry.get_tools_for_skills(skill_names)
         tool_map: dict[str, AgentTool] = {t.name: t for t in activated_tools}
