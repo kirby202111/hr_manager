@@ -18,8 +18,6 @@ from app.models import (
     SkillCatalog,
     Leave,
     Payroll,
-    PerformanceCycle,
-    PerformanceReview,
     Project,
     ProjectSkillRequirement,
     ProjectMember,
@@ -397,94 +395,6 @@ def seed_payrolls(session, employees: list[dict]):
             session.add(record)
 
 
-def seed_performance(session, employees: list[dict]):
-    """创建考核周期和绩效评分"""
-    today = date.today()
-
-    # 创建 2 个考核周期
-    cycles_data = [
-        {
-            "name": "2025年度上半年考核",
-            "start_date": date(2025, 1, 1),
-            "end_date": date(2025, 6, 30),
-            "description": "2025年上半年绩效考核",
-            "status": "closed",
-        },
-        {
-            "name": "2025年度下半年考核",
-            "start_date": date(2025, 7, 1),
-            "end_date": date(2025, 12, 31),
-            "description": "2025年下半年绩效考核",
-            "status": "active",
-        },
-    ]
-
-    cycle_ids = []
-    for cd in cycles_data:
-        cycle = PerformanceCycle(
-            **cd,
-            created_at=datetime.now() - timedelta(days=random.randint(60, 180)),
-        )
-        session.add(cycle)
-    session.flush()
-
-    for c in session.query(PerformanceCycle).all():
-        cycle_ids.append(c.id)
-
-    # 评分等级映射
-    def rating_to_level(rating: float) -> str:
-        if rating >= 4.5:
-            return "excellent"
-        if rating >= 3.5:
-            return "good"
-        if rating >= 2.5:
-            return "average"
-        return "poor"
-
-    RATING_COMMENTS = {
-        "excellent": [
-            "工作表现突出，多次解决生产难题，团队标杆",
-            "技术能力过硬，主动承担关键项目，成果显著",
-            "工作积极主动，效率高，品质意识强",
-        ],
-        "good": [
-            "工作认真负责，完成各项任务指标",
-            "技能水平良好，能独立处理常见问题",
-            "团队协作好，按时交付工作成果",
-        ],
-        "average": [
-            "基本完成本职工作，有待提升效率",
-            "工作态度尚可，需加强技能学习",
-            "能配合团队工作，主动性需提高",
-        ],
-        "poor": [
-            "工作效率偏低，需加强培训和督导",
-            "多次出现操作失误，需重点改进",
-            "出勤率偏低，影响团队进度",
-        ],
-    }
-
-    reviewers = ["王建国", "李明辉", "张伟东", "赵海涛", "刘芳"]
-
-    for emp in employees:
-        for cycle_id in cycle_ids:
-            # 随机评分 2.0 ~ 5.0
-            rating = round(random.uniform(2.0, 5.0), 1)
-            level = rating_to_level(rating)
-            comment = random.choice(RATING_COMMENTS[level])
-
-            review = PerformanceReview(
-                employee_id=emp["id"],
-                cycle_id=cycle_id,
-                rating=rating,
-                rating_level=level,
-                reviewer=random.choice(reviewers),
-                comments=comment,
-                created_at=datetime.now() - timedelta(days=random.randint(10, 60)),
-            )
-            session.add(review)
-
-
 def seed_skills(session, employees: list[dict], catalog_ids: dict[str, int]):
     """为每位员工生成 2~4 项技能"""
     for emp in employees:
@@ -699,9 +609,6 @@ def main():
         print("正在生成薪资记录...")
         seed_payrolls(session, employees)
 
-        print("正在生成绩效考核记录...")
-        seed_performance(session, employees)
-
         print("正在生成员工技能记录...")
         seed_skills(session, employees, catalog_ids)
 
@@ -719,8 +626,6 @@ def main():
             "考勤": session.query(Attendance).count(),
             "请假": session.query(Leave).count(),
             "薪资": session.query(Payroll).count(),
-            "考核周期": session.query(PerformanceCycle).count(),
-            "绩效评分": session.query(PerformanceReview).count(),
             "员工技能": session.query(EmployeeSkill).count(),
             "项目": session.query(Project).count(),
             "技能需求": session.query(ProjectSkillRequirement).count(),

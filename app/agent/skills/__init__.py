@@ -6,7 +6,6 @@ from app.agent.skills.onboarding import skill as onboarding_skill
 from app.agent.skills.leave import skill as leave_skill
 from app.agent.skills.attendance import skill as attendance_skill
 from app.agent.skills.payroll import skill as payroll_skill
-from app.agent.skills.performance import skill as performance_skill
 from app.agent.skills.analytics import skill as analytics_skill
 from app.agent.skills.knowledge_base import skill as knowledge_base_skill
 from app.agent.skills.project import skill as project_skill
@@ -19,7 +18,6 @@ _ALL_SKILLS: list[Skill] = [
     leave_skill,
     attendance_skill,
     payroll_skill,
-    performance_skill,
     analytics_skill,
     knowledge_base_skill,
     project_skill,

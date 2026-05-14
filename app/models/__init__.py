@@ -5,7 +5,6 @@ from app.models.skill_catalog import SkillCatalog
 from app.models.attendance import Attendance
 from app.models.leave import Leave
 from app.models.payroll import Payroll
-from app.models.performance import PerformanceCycle, PerformanceReview
 from app.models.project import Project, ProjectSkillRequirement, ProjectMember, ProjectTimesheet
 
 __all__ = [
@@ -16,8 +15,6 @@ __all__ = [
     "Attendance",
     "Leave",
     "Payroll",
-    "PerformanceCycle",
-    "PerformanceReview",
     "Project",
     "ProjectSkillRequirement",
     "ProjectMember",
