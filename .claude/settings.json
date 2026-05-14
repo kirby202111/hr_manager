@@ -1,32 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir d:\\\\hr_manager /b)",
-      "Bash(dir \"d:\\\\hr_manager\")",
-      "Bash(xargs grep -l \"skill\")",
-      "Bash(uvicorn main:app --host 0.0.0.0 --port 8000)",
-      "Bash(curl -s http://localhost:8000/)",
-      "Bash(curl -s -X POST http://localhost:8000/agent/memories/ -H \"Content-Type: application/json\" -d '{\"session_id\":\"test-session\",\"user_tag\":\"test_user\",\"memory_type\":\"preference\",\"category\":\"general\",\"subject\":\"user_preference\",\"content\":\"我是HR经理张三，负责项目3和项目7\",\"importance\":4}')",
-      "Bash(curl -s http://localhost:8000/docs)",
-      "Bash(curl -s http://localhost:8000/openapi.json)",
-      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); paths=[p for p in data['paths'] if 'memory' in p]; print\\('\\\\n'.join\\(paths\\)\\)\")",
-      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); paths=[p for p in data['paths'] if 'memor' in p]; print\\('\\\\n'.join\\(paths\\)\\)\")",
-      "Bash(python -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\([p for p in data['paths']]\\)\")",
-      "Bash(python -c \"from app.routers import agent_memory; print\\(dir\\(agent_memory.router\\)\\); print\\(agent_memory.router.prefix\\); print\\(agent_memory.router.routes\\)\")",
-      "Bash(python -c \"from main import app; paths=[p for p in app.routes if hasattr\\(p,'path'\\) and 'memor' in p.path]; print\\(paths\\)\")",
-      "Bash(uvicorn main:app --host 0.0.0.0 --port 8001)",
-      "Bash(curl -s -X POST http://localhost:8001/agent/memories/ -H \"Content-Type: application/json\" -d '{\"session_id\":\"test-session\",\"user_tag\":\"test_user\",\"memory_type\":\"preference\",\"category\":\"general\",\"subject\":\"user_preference\",\"content\":\"我是HR经理张三，负责项目3和项目7\",\"importance\":4}')",
-      "Bash(curl -s -X POST \"http://localhost:8001/agent/memories/\" -H \"Content-Type: application/json\" --data-raw \"{\\\\\"session_id\\\\\":\\\\\"test-session\\\\\",\\\\\"user_tag\\\\\":\\\\\"test_user\\\\\",\\\\\"memory_type\\\\\":\\\\\"preference\\\\\",\\\\\"category\\\\\":\\\\\"general\\\\\",\\\\\"subject\\\\\":\\\\\"user_preference\\\\\",\\\\\"content\\\\\":\\\\\"test content\\\\\",\\\\\"importance\\\\\":4}\")",
-      "Bash(curl -s \"http://localhost:8001/agent/memories/?user_tag=test_user\")",
-      "Bash(curl -s \"http://localhost:8001/agent/memories/?user_tag=test_user&memory_type=preference\")",
-      "Bash(curl -s -X POST \"http://localhost:8001/agent/memories/1/reminders\" -H \"Content-Type: application/json\" --data-raw \"{\\\\\"reminder_type\\\\\":\\\\\"one_time\\\\\",\\\\\"trigger_at\\\\\":\\\\\"2026-05-14T03:00:00\\\\\"}\")",
-      "Bash(curl -s \"http://localhost:8001/agent/memories/reminders/pending?user_tag=test_user\")",
-      "Bash(curl -s -X POST \"http://localhost:8001/agent/memories/cleanup\")",
-      "Bash(curl -s -X DELETE \"http://localhost:8001/agent/memories/1\")",
-      "Bash(curl -s -X POST \"http://localhost:8001/agent/sessions\")",
-      "Bash(curl -s -X POST \"http://localhost:8001/agent/chat\" -H \"Content-Type: application/json\" --data-raw \"{\\\\\"message\\\\\":\\\\\"hello\\\\\",\\\\\"user_tag\\\\\":\\\\\"test_user\\\\\"}\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('session_id:', d.get\\('session_id',''\\)\\); print\\('reply:', d.get\\('reply',''\\)[:100]\\)\")",
-      "Bash(curl -s \"http://localhost:8001/agent/sessions\")"
+      "Bash(curl *)",
+      "Bash(uvicorn *)",
+      "Bash(python *)",
+      "Bash(dir *)",
+      "Bash(findstr *)",
+      "Bash(xargs *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }
