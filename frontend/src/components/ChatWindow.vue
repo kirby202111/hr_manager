@@ -1,7 +1,7 @@
 <template>
   <div class="chat-window">
-    <WelcomeScreen v-if="msgs.length === 0" @select="handleSuggestion" />
-    <MessageList v-else />
+    <MessageList v-if="store.isLoadingMessages || msgs.length > 0" />
+    <WelcomeScreen v-else @select="handleSuggestion" />
     <ChatInput />
   </div>
 </template>

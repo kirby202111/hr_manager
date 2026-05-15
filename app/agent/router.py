@@ -33,9 +33,7 @@ router = APIRouter(prefix="/agent", tags=["AI助手"])
 
 
 def _format_sse_event(event: str, data: str) -> str:
-    lines = str(data).splitlines()
-    if not lines:
-        lines = [""]
+    lines = str(data).split("\n")
     data_lines = "\n".join(f"data: {line}" for line in lines)
     return f"event: {event}\n{data_lines}\n\n"
 
