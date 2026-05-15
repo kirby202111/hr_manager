@@ -3,22 +3,32 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import Base, engine
-from app.database_migration import migrate_schema
-from app.models import *  # noqa: F403 — register all ORM tables
-from app.routers import employee, department, attendance, leave, payroll, employee_skill, skill_catalog, project, agent_memory
 from app.agent.router import create_agent
+from app.agent.router import router as agent_router
+from app.errors import AppError, app_error_handler
+from app.models import *  # noqa: F403 — register all ORM tables
+from app.routers import (
+    agent_memory,
+    attendance,
+    department,
+    employee,
+    employee_skill,
+    leave,
+    payroll,
+    project,
+    skill_catalog,
+)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    migrate_schema()
     _app.state.agent, _app.state.skill_registry, _app.state.history_store = create_agent()
     yield
 
 
 app = FastAPI(title="员工管理系统 API", version="2.0.0", lifespan=lifespan)
+
+app.add_exception_handler(AppError, app_error_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,9 +47,8 @@ app.include_router(employee_skill.router)
 app.include_router(skill_catalog.router)
 app.include_router(project.router)
 app.include_router(agent_memory.router)
-
-from app.agent.router import router as agent_router
 app.include_router(agent_router)
+
 
 @app.get("/")
 def read_root():

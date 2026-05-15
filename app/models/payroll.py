@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, Integer, String
+from sqlalchemy import Date, DateTime, Float, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -9,6 +9,10 @@ from app.models.base import _to_dict
 
 class Payroll(Base):
     __tablename__ = "payrolls"
+    __table_args__ = (
+        UniqueConstraint("employee_id", "month", name="uq_payrolls_employee_month"),
+        Index("ix_payrolls_employee_month", "employee_id", "month"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     employee_id: Mapped[int] = mapped_column(Integer, nullable=False)

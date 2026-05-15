@@ -55,4 +55,8 @@ class ConversationMessage(Base):
     reasoning_content: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    to_dict = _to_dict
+    def to_dict(self) -> dict:
+        data = _to_dict(self)
+        if self.user_tag == "default":
+            data.pop("user_tag", None)
+        return data

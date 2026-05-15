@@ -1,65 +1,66 @@
-from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
+from app.errors import NotFoundError, ValidationError
 from app.repositories import department as department_repo
 from app.repositories import employee as employee_repo
-from app.schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentResponse, DepartmentListResponse
+from app.schemas.department import DepartmentCreate, DepartmentListResponse, DepartmentResponse, DepartmentUpdate
 
 
-def list_departments() -> DepartmentListResponse:
-    departments = department_repo.get_all_departments()
+def list_departments(db: Session | None = None) -> DepartmentListResponse:
+    departments = department_repo.get_all_departments(db)
+    employee_counts = department_repo.count_employees_by_department(db)
     dept_responses = []
     for dept in departments:
-        employees = employee_repo.get_employees_by_department(dept["id"])
-        dept_responses.append(DepartmentResponse(employee_count=len(employees), **dept))
+        dept_responses.append(DepartmentResponse(employee_count=employee_counts.get(dept["id"], 0), **dept))
     return DepartmentListResponse(departments=dept_responses, total=len(dept_responses))
 
 
-def get_department(department_id: int) -> DepartmentResponse:
-    dept = department_repo.get_department_by_id(department_id)
+def get_department(department_id: int, db: Session | None = None) -> DepartmentResponse:
+    dept = department_repo.get_department_by_id(department_id, db)
     if dept is None:
-        raise HTTPException(status_code=404, detail=f"Department {department_id} not found")
-    employees = employee_repo.get_employees_by_department(department_id)
+        raise NotFoundError(f"Department {department_id} not found")
+    employees = employee_repo.get_employees_by_department(department_id, db)
     return DepartmentResponse(employee_count=len(employees), **dept)
 
 
-def create_department(dept_in: DepartmentCreate) -> DepartmentResponse:
-    existing = department_repo.get_department_by_name(dept_in.name)
+def create_department(dept_in: DepartmentCreate, db: Session | None = None) -> DepartmentResponse:
+    existing = department_repo.get_department_by_name(dept_in.name, db)
     if existing is not None:
-        raise HTTPException(status_code=400, detail=f"Department '{dept_in.name}' already exists")
+        raise ValidationError(f"Department '{dept_in.name}' already exists")
     dept_data = dept_in.model_dump()
-    dept = department_repo.create_department(dept_data)
+    dept = department_repo.create_department(dept_data, db)
     return DepartmentResponse(**dept)
 
 
-def update_department(department_id: int, dept_in: DepartmentUpdate) -> DepartmentResponse:
-    dept = department_repo.get_department_by_id(department_id)
+def update_department(department_id: int, dept_in: DepartmentUpdate, db: Session | None = None) -> DepartmentResponse:
+    dept = department_repo.get_department_by_id(department_id, db)
     if dept is None:
-        raise HTTPException(status_code=404, detail=f"Department {department_id} not found")
+        raise NotFoundError(f"Department {department_id} not found")
     if dept_in.name is not None:
-        existing = department_repo.get_department_by_name(dept_in.name)
+        existing = department_repo.get_department_by_name(dept_in.name, db)
         if existing is not None and existing["id"] != department_id:
-            raise HTTPException(status_code=400, detail=f"Department '{dept_in.name}' already exists")
+            raise ValidationError(f"Department '{dept_in.name}' already exists")
     update_data = dept_in.model_dump(exclude_unset=True)
-    updated = department_repo.update_department(department_id, update_data)
-    employees = employee_repo.get_employees_by_department(department_id)
+    updated = department_repo.update_department(department_id, update_data, db)
+    employees = employee_repo.get_employees_by_department(department_id, db)
     return DepartmentResponse(employee_count=len(employees), **updated)
 
 
-def delete_department(department_id: int) -> dict:
-    dept = department_repo.get_department_by_id(department_id)
+def delete_department(department_id: int, db: Session | None = None) -> dict:
+    dept = department_repo.get_department_by_id(department_id, db)
     if dept is None:
-        raise HTTPException(status_code=404, detail=f"Department {department_id} not found")
-    employees = employee_repo.get_employees_by_department(department_id)
+        raise NotFoundError(f"Department {department_id} not found")
+    employees = employee_repo.get_employees_by_department(department_id, db)
     if employees:
-        raise HTTPException(status_code=400, detail="Cannot delete department with existing employees")
-    department_repo.delete_department(department_id)
+        raise ValidationError("Cannot delete department with existing employees")
+    department_repo.delete_department(department_id, db)
     return {"message": f"Department {department_id} deleted"}
 
 
-def get_department_employees(department_id: int) -> list:
-    dept = department_repo.get_department_by_id(department_id)
+def get_department_employees(department_id: int, db: Session | None = None) -> list:
+    dept = department_repo.get_department_by_id(department_id, db)
     if dept is None:
-        raise HTTPException(status_code=404, detail=f"Department {department_id} not found")
+        raise NotFoundError(f"Department {department_id} not found")
     from app.schemas.employee import EmployeeResponse
-    employees = employee_repo.get_employees_by_department(department_id)
+    employees = employee_repo.get_employees_by_department(department_id, db)
     return [EmployeeResponse(**e) for e in employees]

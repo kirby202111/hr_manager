@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, Integer, String
+from sqlalchemy import Date, DateTime, Float, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -9,6 +9,7 @@ from app.models.base import _to_dict
 
 class Project(Base):
     __tablename__ = "projects"
+    __table_args__ = (Index("ix_projects_status", "status"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -23,6 +24,11 @@ class Project(Base):
 
 class ProjectSkillRequirement(Base):
     __tablename__ = "project_skill_requirements"
+    __table_args__ = (
+        UniqueConstraint("project_id", "skill_id", name="uq_project_requirements_project_skill"),
+        Index("ix_project_requirements_project_id", "project_id"),
+        Index("ix_project_requirements_skill_id", "skill_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -37,6 +43,11 @@ class ProjectSkillRequirement(Base):
 
 class ProjectMember(Base):
     __tablename__ = "project_members"
+    __table_args__ = (
+        UniqueConstraint("project_id", "employee_id", name="uq_project_members_project_employee"),
+        Index("ix_project_members_project_id", "project_id"),
+        Index("ix_project_members_employee_id", "employee_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -50,6 +61,10 @@ class ProjectMember(Base):
 
 class ProjectTimesheet(Base):
     __tablename__ = "project_timesheets"
+    __table_args__ = (
+        Index("ix_project_timesheets_project_employee_date", "project_id", "employee_id", "date"),
+        Index("ix_project_timesheets_requirement_id", "requirement_id"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, nullable=False)

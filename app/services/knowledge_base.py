@@ -31,7 +31,7 @@ def add_document_from_text(title: str, content: str, source: str = "") -> dict:
 def add_document_from_file(filepath: str) -> dict:
     if not os.path.isfile(filepath):
         return {"error": f"File not found: {filepath}"}
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, encoding="utf-8") as f:
         content = f.read()
     source = os.path.basename(filepath)
     title = os.path.splitext(source)[0]

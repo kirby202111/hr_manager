@@ -5,6 +5,8 @@ from typing import AsyncIterator, Callable, Protocol, runtime_checkable
 
 from fastapi import HTTPException
 
+from app.errors import AppError
+
 
 @runtime_checkable
 class BaseAgent(Protocol):
@@ -48,6 +50,8 @@ def _safe(fn, *args, **kwargs) -> dict:
         return result
     except HTTPException as e:
         return {"error": e.detail}
+    except AppError as e:
+        return {"error": e.message, "error_code": e.error_code}
     except Exception as e:
         return {"error": str(e)}
 

@@ -59,16 +59,6 @@ def _setup_db(monkeypatch):
         if hasattr(mod, "SessionLocal"):
             monkeypatch.setattr(mod, "SessionLocal", _TestSessionLocal)
 
-    # Patch engine in main module so lifespan creates tables on test DB
-    import main as main_mod
-
-    monkeypatch.setattr(main_mod, "engine", _TEST_ENGINE)
-
-    # Patch engine in database_migration module
-    import app.database_migration as mig_mod
-
-    monkeypatch.setattr(mig_mod, "engine", _TEST_ENGINE)
-
     Base.metadata.create_all(bind=_TEST_ENGINE)
     yield
     Base.metadata.drop_all(bind=_TEST_ENGINE)
@@ -90,6 +80,7 @@ def client():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
+    from app.errors import AppError, app_error_handler
     from app.routers import (
         agent_memory,
         attendance,
@@ -103,6 +94,7 @@ def client():
     )
 
     app = FastAPI()
+    app.add_exception_handler(AppError, app_error_handler)
     app.include_router(employee.router)
     app.include_router(department.router)
     app.include_router(attendance.router)
