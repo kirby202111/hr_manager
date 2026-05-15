@@ -1,9 +1,8 @@
 from datetime import date as date_type
 
 from app.agent.protocol import AgentTool, Skill, _safe
+from app.schemas.leave import LeaveApproval, LeaveCreate
 from app.services import leave as leave_service
-from app.schemas.leave import LeaveCreate, LeaveApproval
-
 
 skill = Skill(
     name="leave_management",
@@ -21,9 +20,7 @@ skill = Skill(
                 },
                 "required": [],
             },
-            fn=lambda employee_id=None, status=None: _safe(
-                leave_service.list_leaves, employee_id, status
-            ),
+            fn=lambda employee_id=None, status=None: _safe(leave_service.list_leaves, employee_id, status),
         ),
         AgentTool(
             name="query_leave_balance",
@@ -42,7 +39,10 @@ skill = Skill(
                 "type": "object",
                 "properties": {
                     "employee_id": {"type": "integer", "description": "员工ID"},
-                    "leave_type": {"type": "string", "description": "请假类型：sick(病假)/annual(年假)/personal(事假)/other(其他)"},
+                    "leave_type": {
+                        "type": "string",
+                        "description": "请假类型：sick(病假)/annual(年假)/personal(事假)/other(其他)",
+                    },
                     "start_date": {"type": "string", "description": "起始日期，格式YYYY-MM-DD"},
                     "end_date": {"type": "string", "description": "结束日期，格式YYYY-MM-DD"},
                     "reason": {"type": "string", "description": "请假原因（可选）"},

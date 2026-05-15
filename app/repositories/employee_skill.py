@@ -24,9 +24,7 @@ def get_skills_by_employee(employee_id: int, db: Session | None = None) -> list[
 
 def get_skills_by_name(skill_name: str, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        skills = session.query(EmployeeSkillORM).filter(
-            EmployeeSkillORM.skill_name.contains(skill_name)
-        ).all()
+        skills = session.query(EmployeeSkillORM).filter(EmployeeSkillORM.skill_name.contains(skill_name)).all()
         return [s.to_dict() for s in skills]
 
 

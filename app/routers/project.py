@@ -28,6 +28,7 @@ router = APIRouter(prefix="/projects", tags=["项目管理"])
 
 # ── Project ──────────────────────────────────────────────────
 
+
 @router.get("/", response_model=ProjectListResponse)
 def list_projects(status: str | None = None, db: Session = Depends(get_db)):
     return project_service.list_projects(status, db)
@@ -54,6 +55,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
 
 
 # ── Skill Requirements ───────────────────────────────────────
+
 
 @router.get(
     "/{project_id}/skill-requirements",
@@ -95,6 +97,7 @@ def delete_skill_requirement(project_id: int, req_id: int, db: Session = Depends
 
 # ── Members ──────────────────────────────────────────────────
 
+
 @router.get("/{project_id}/members", response_model=ProjectMemberListResponse, tags=["项目成员管理"])
 def list_members(project_id: int, db: Session = Depends(get_db)):
     return project_service.list_members(project_id, db)
@@ -116,6 +119,7 @@ def delete_member(project_id: int, member_id: int, db: Session = Depends(get_db)
 
 
 # ── Timesheets ───────────────────────────────────────────────
+
 
 @router.get("/{project_id}/timesheets", response_model=ProjectTimesheetListResponse, tags=["项目工时记录"])
 def list_timesheets(
@@ -153,6 +157,7 @@ def delete_timesheet(project_id: int, timesheet_id: int, db: Session = Depends(g
 
 
 # ── Progress ─────────────────────────────────────────────────
+
 
 @router.get("/{project_id}/progress", response_model=ProjectProgressResponse, tags=["项目进度"])
 def get_project_progress(project_id: int, db: Session = Depends(get_db)):

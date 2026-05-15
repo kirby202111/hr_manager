@@ -1,7 +1,6 @@
 from app.agent.protocol import AgentTool, Skill, _safe
 from app.services import payroll as payroll_service
 
-
 skill = Skill(
     name="payroll_processing",
     description="薪资查询、生成与发放管理",

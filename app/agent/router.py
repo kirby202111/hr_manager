@@ -6,9 +6,9 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.agent.history import SQLiteHistoryStore
 from app.agent.protocol import BaseHistoryStore
 from app.agent.react_agent import ReActAgent
-from app.agent.history import SQLiteHistoryStore
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skills import register_all_skills
 from app.config import settings
@@ -93,6 +93,7 @@ def delete_session(session_id: str, request: Request):
 
 
 # ---- Skill Management ----
+
 
 @router.get("/skills")
 def list_skills(request: Request):

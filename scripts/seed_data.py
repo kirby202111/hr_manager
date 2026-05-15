@@ -8,20 +8,21 @@ from datetime import date, datetime, time, timedelta
 # Ensure project root is on sys.path so `app` is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import SessionLocal, Base, engine
 from app.database_migration import migrate_schema
+
+from app.database import Base, SessionLocal, engine
 from app.models import (
     Attendance,
     Department,
     Employee,
     EmployeeSkill,
-    SkillCatalog,
     Leave,
     Payroll,
     Project,
-    ProjectSkillRequirement,
     ProjectMember,
+    ProjectSkillRequirement,
     ProjectTimesheet,
+    SkillCatalog,
 )
 
 # ── 电子车间部门 ──────────────────────────────────────────────
@@ -36,14 +37,54 @@ DEPARTMENTS = [
 
 # ── 员工姓名池 ────────────────────────────────────────────────
 EMPLOYEE_NAMES = [
-    "王建国", "李明辉", "张伟东", "陈志强", "刘芳", "赵海涛",
-    "周磊", "吴秀英", "孙浩", "杨丽", "朱军", "何晓燕",
-    "林涛", "黄艳", "马超", "罗敏", "谢勇", "韩雪梅",
-    "唐志刚", "冯玉兰", "曹鹏", "邓丽华", "许强", "彭小兰",
-    "肖伟", "田静", "袁波", "蒋秀芳", "蔡明", "潘红",
-    "余斌", "叶丽萍", "范晓东", "钟文", "姚华", "卢秀珍",
-    "廖建军", "邵英", "孔维", "汤美玲", "严刚", "邹艳",
-    "熊飞", "金秀兰", "陆强", "郝丽", "段明", "雷小燕",
+    "王建国",
+    "李明辉",
+    "张伟东",
+    "陈志强",
+    "刘芳",
+    "赵海涛",
+    "周磊",
+    "吴秀英",
+    "孙浩",
+    "杨丽",
+    "朱军",
+    "何晓燕",
+    "林涛",
+    "黄艳",
+    "马超",
+    "罗敏",
+    "谢勇",
+    "韩雪梅",
+    "唐志刚",
+    "冯玉兰",
+    "曹鹏",
+    "邓丽华",
+    "许强",
+    "彭小兰",
+    "肖伟",
+    "田静",
+    "袁波",
+    "蒋秀芳",
+    "蔡明",
+    "潘红",
+    "余斌",
+    "叶丽萍",
+    "范晓东",
+    "钟文",
+    "姚华",
+    "卢秀珍",
+    "廖建军",
+    "邵英",
+    "孔维",
+    "汤美玲",
+    "严刚",
+    "邹艳",
+    "熊飞",
+    "金秀兰",
+    "陆强",
+    "郝丽",
+    "段明",
+    "雷小燕",
 ]
 
 # 部门对应的薪资范围 (base)
@@ -86,45 +127,155 @@ LEAVE_STATUSES = ["approved", "approved", "approved", "pending", "rejected"]
 # ── 员工技能配置 ────────────────────────────────────────────────
 DEPT_SKILLS = {
     "生产部": [
-        {"skill_name": "SMT贴片操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "波峰焊操作", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "手工焊接", "proficiency_level": "expert", "years_of_experience": None, "certification": "IPC-A-610"},
+        {
+            "skill_name": "SMT贴片操作",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "波峰焊操作",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "手工焊接",
+            "proficiency_level": "expert",
+            "years_of_experience": None,
+            "certification": "IPC-A-610",
+        },
         {"skill_name": "产品组装", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "功能测试", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "功能测试",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
         {"skill_name": "5S管理", "proficiency_level": "beginner", "years_of_experience": None, "certification": None},
     ],
     "品质部": [
-        {"skill_name": "IPC-A-610检验", "proficiency_level": "expert", "years_of_experience": None, "certification": "IPC-A-610 CIS"},
-        {"skill_name": "来料检验(IQC)", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "示波器使用", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "SPC统计制程管控", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "万用表操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "IPC-A-610检验",
+            "proficiency_level": "expert",
+            "years_of_experience": None,
+            "certification": "IPC-A-610 CIS",
+        },
+        {
+            "skill_name": "来料检验(IQC)",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "示波器使用",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "SPC统计制程管控",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "万用表操作",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": None,
+        },
     ],
     "工程部": [
         {"skill_name": "AutoCAD", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "PLC编程", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "PLC编程",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
         {"skill_name": "设备维修", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
         {"skill_name": "SOP编制", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
-        {"skill_name": "FMEA分析", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "FMEA分析",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
     ],
     "仓储物流部": [
-        {"skill_name": "ERP系统操作", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "叉车操作", "proficiency_level": "advanced", "years_of_experience": None, "certification": "叉车操作证"},
-        {"skill_name": "库存管理", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "ERP系统操作",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "叉车操作",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": "叉车操作证",
+        },
+        {
+            "skill_name": "库存管理",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
     ],
     "行政人事部": [
         {"skill_name": "劳动法规", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "招聘面试", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "Office办公软件", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "招聘面试",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "Office办公软件",
+            "proficiency_level": "expert",
+            "years_of_experience": None,
+            "certification": None,
+        },
     ],
     "研发部": [
         {"skill_name": "C/C++", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "Python", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "Altium Designer", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
-        {"skill_name": "嵌入式开发", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "电路仿真", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
-        {"skill_name": "信号完整性分析", "proficiency_level": "beginner", "years_of_experience": None, "certification": None},
-        {"skill_name": "EMC设计", "proficiency_level": "intermediate", "years_of_experience": None, "certification": None},
+        {
+            "skill_name": "Python",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "Altium Designer",
+            "proficiency_level": "expert",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "嵌入式开发",
+            "proficiency_level": "advanced",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "电路仿真",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "信号完整性分析",
+            "proficiency_level": "beginner",
+            "years_of_experience": None,
+            "certification": None,
+        },
+        {
+            "skill_name": "EMC设计",
+            "proficiency_level": "intermediate",
+            "years_of_experience": None,
+            "certification": None,
+        },
     ],
 }
 
@@ -321,8 +472,11 @@ def seed_leaves(session, employees: list[dict]):
             if status == "approved":
                 approver = random.choice(["王建国", "刘芳", "李明辉"])
                 approved_at = datetime(
-                    start_date.year, start_date.month, start_date.day,
-                    random.randint(8, 17), random.randint(0, 59),
+                    start_date.year,
+                    start_date.month,
+                    start_date.day,
+                    random.randint(8, 17),
+                    random.randint(0, 59),
                 )
 
             record = Leave(
@@ -337,8 +491,11 @@ def seed_leaves(session, employees: list[dict]):
                 approver=approver,
                 approved_at=approved_at,
                 created_at=datetime(
-                    start_date.year, start_date.month, start_date.day,
-                    random.randint(8, 12), random.randint(0, 59),
+                    start_date.year,
+                    start_date.month,
+                    start_date.day,
+                    random.randint(8, 12),
+                    random.randint(0, 59),
                 ),
             )
             session.add(record)
@@ -481,13 +638,24 @@ def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
     # 项目1: 智能质检系统 - 需要Python、嵌入式开发、IPC-A-610检验
     req_data_1 = [
         {"skill_id": catalog_ids["Python"], "required_proficiency": "advanced", "person_days": 30.0, "headcount": 2},
-        {"skill_id": catalog_ids["嵌入式开发"], "required_proficiency": "advanced", "person_days": 25.0, "headcount": 2},
-        {"skill_id": catalog_ids["IPC-A-610检验"], "required_proficiency": "intermediate", "person_days": 15.0, "headcount": 1},
+        {
+            "skill_id": catalog_ids["嵌入式开发"],
+            "required_proficiency": "advanced",
+            "person_days": 25.0,
+            "headcount": 2,
+        },
+        {
+            "skill_id": catalog_ids["IPC-A-610检验"],
+            "required_proficiency": "intermediate",
+            "person_days": 15.0,
+            "headcount": 1,
+        },
     ]
     req_ids_1 = []
     for rd in req_data_1:
         req = ProjectSkillRequirement(
-            project_id=project_ids[0], **rd,
+            project_id=project_ids[0],
+            **rd,
             created_at=datetime.now() - timedelta(days=random.randint(20, 60)),
         )
         session.add(req)
@@ -529,7 +697,7 @@ def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
                     employee_id=emp["id"],
                     date=work_date,
                     hours=round(random.uniform(4, 8), 1),
-                    description=f"项目开发工作",
+                    description="项目开发工作",
                     created_at=datetime.now() - timedelta(days=random.randint(1, 30)),
                 )
                 session.add(ts)
@@ -538,11 +706,17 @@ def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
     req_data_2 = [
         {"skill_id": catalog_ids["C/C++"], "required_proficiency": "advanced", "person_days": 20.0, "headcount": 2},
         {"skill_id": catalog_ids["PLC编程"], "required_proficiency": "advanced", "person_days": 25.0, "headcount": 1},
-        {"skill_id": catalog_ids["ERP系统操作"], "required_proficiency": "intermediate", "person_days": 10.0, "headcount": 1},
+        {
+            "skill_id": catalog_ids["ERP系统操作"],
+            "required_proficiency": "intermediate",
+            "person_days": 10.0,
+            "headcount": 1,
+        },
     ]
     for rd in req_data_2:
         req = ProjectSkillRequirement(
-            project_id=project_ids[1], **rd,
+            project_id=project_ids[1],
+            **rd,
             created_at=datetime.now() - timedelta(days=random.randint(10, 30)),
         )
         session.add(req)
@@ -565,13 +739,24 @@ def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
 
     # 项目3: 新产品NPI - 暂无成员和工时（planning状态）
     req_data_3 = [
-        {"skill_id": catalog_ids["SMT贴片操作"], "required_proficiency": "advanced", "person_days": 20.0, "headcount": 3},
-        {"skill_id": catalog_ids["波峰焊操作"], "required_proficiency": "intermediate", "person_days": 10.0, "headcount": 2},
+        {
+            "skill_id": catalog_ids["SMT贴片操作"],
+            "required_proficiency": "advanced",
+            "person_days": 20.0,
+            "headcount": 3,
+        },
+        {
+            "skill_id": catalog_ids["波峰焊操作"],
+            "required_proficiency": "intermediate",
+            "person_days": 10.0,
+            "headcount": 2,
+        },
         {"skill_id": catalog_ids["功能测试"], "required_proficiency": "advanced", "person_days": 15.0, "headcount": 2},
     ]
     for rd in req_data_3:
         req = ProjectSkillRequirement(
-            project_id=project_ids[2], **rd,
+            project_id=project_ids[2],
+            **rd,
             created_at=datetime.now() - timedelta(days=random.randint(1, 10)),
         )
         session.add(req)

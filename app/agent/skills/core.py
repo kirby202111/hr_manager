@@ -1,8 +1,7 @@
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.services import employee as employee_service
-from app.services import department as department_service
 from app.schemas.employee import EmployeeCreate, EmployeeUpdate
-
+from app.services import department as department_service
+from app.services import employee as employee_service
 
 skill = Skill(
     name="employee_management",

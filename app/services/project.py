@@ -300,22 +300,26 @@ def get_project_progress(project_id: int, db: Session | None = None) -> ProjectP
     by_requirement = []
     for r in progress["by_requirement"]:
         catalog = catalog_repo.get_skill_by_id(r["skill_id"], db)
-        by_requirement.append(RequirementProgress(
-            requirement_id=r["requirement_id"],
-            skill_name=catalog["name"] if catalog else "Unknown",
-            budget_person_days=r["budget_person_days"],
-            used_person_days=r["used_person_days"],
-            progress=r["progress"],
-        ))
+        by_requirement.append(
+            RequirementProgress(
+                requirement_id=r["requirement_id"],
+                skill_name=catalog["name"] if catalog else "Unknown",
+                budget_person_days=r["budget_person_days"],
+                used_person_days=r["used_person_days"],
+                progress=r["progress"],
+            )
+        )
 
     by_member = []
     for m in progress["by_member"]:
         emp = employee_repo.get_employee_by_id(m["employee_id"], db)
-        by_member.append(MemberWorkload(
-            employee_id=m["employee_id"],
-            employee_name=emp["name"] if emp else None,
-            total_person_days=m["total_person_days"],
-        ))
+        by_member.append(
+            MemberWorkload(
+                employee_id=m["employee_id"],
+                employee_name=emp["name"] if emp else None,
+                total_person_days=m["total_person_days"],
+            )
+        )
 
     return ProjectProgressResponse(
         project_id=project_id,

@@ -2,7 +2,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel
 
-
 LEAVE_TYPE_NAMES = {
     "sick": "病假",
     "annual": "年假",

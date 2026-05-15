@@ -57,5 +57,3 @@ def update_payroll(payroll_id: int, data: PayrollUpdate, db: Session = Depends(g
 @router.put("/{payroll_id}/pay", response_model=PayrollResponse)
 def pay_payroll(payroll_id: int, db: Session = Depends(get_db)):
     return payroll_service.pay_payroll(payroll_id, db)
-
-

@@ -1,9 +1,8 @@
 from datetime import date as date_type
 
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.services import attendance as attendance_service
 from app.schemas.attendance import AttendanceCheckIn, AttendanceCheckOut
-
+from app.services import attendance as attendance_service
 
 skill = Skill(
     name="attendance_management",

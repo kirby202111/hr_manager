@@ -4,10 +4,10 @@ import calendar
 from datetime import date as date_type
 
 from app.agent.protocol import AgentTool, Skill
-from app.repositories import employee as employee_repo
 from app.repositories import department as department_repo
-from app.services import department as department_service
+from app.repositories import employee as employee_repo
 from app.services import attendance as attendance_service
+from app.services import department as department_service
 from app.services import leave as leave_service
 
 
@@ -18,22 +18,26 @@ def _analyze_department_salary() -> dict:
         for dept in depts.departments:
             employees = employee_repo.get_employees_by_department(dept.id)
             if not employees:
-                result.append({
-                    "department": dept.name,
-                    "employee_count": 0,
-                    "avg_salary": 0,
-                    "min_salary": 0,
-                    "max_salary": 0,
-                })
+                result.append(
+                    {
+                        "department": dept.name,
+                        "employee_count": 0,
+                        "avg_salary": 0,
+                        "min_salary": 0,
+                        "max_salary": 0,
+                    }
+                )
                 continue
             salaries = [e["salary"] for e in employees]
-            result.append({
-                "department": dept.name,
-                "employee_count": len(salaries),
-                "avg_salary": round(sum(salaries) / len(salaries), 2),
-                "min_salary": min(salaries),
-                "max_salary": max(salaries),
-            })
+            result.append(
+                {
+                    "department": dept.name,
+                    "employee_count": len(salaries),
+                    "avg_salary": round(sum(salaries) / len(salaries), 2),
+                    "min_salary": min(salaries),
+                    "max_salary": max(salaries),
+                }
+            )
         return {"departments": result}
     except Exception as e:
         return {"error": str(e)}
@@ -49,13 +53,15 @@ def _analyze_attendance_anomalies(month: str) -> dict:
         for emp in employee_repo.get_all_employees():
             stats = attendance_service.get_employee_stats(emp["id"], start, end)
             if stats.late_days > 0 or stats.early_leave_days > 0 or stats.absent_days > 0:
-                anomalies.append({
-                    "employee_id": emp["id"],
-                    "employee_name": emp["name"],
-                    "late_days": stats.late_days,
-                    "early_leave_days": stats.early_leave_days,
-                    "absent_days": stats.absent_days,
-                })
+                anomalies.append(
+                    {
+                        "employee_id": emp["id"],
+                        "employee_name": emp["name"],
+                        "late_days": stats.late_days,
+                        "early_leave_days": stats.early_leave_days,
+                        "absent_days": stats.absent_days,
+                    }
+                )
         anomalies.sort(key=lambda x: x["late_days"] + x["early_leave_days"] + x["absent_days"], reverse=True)
         return {"month": month, "anomaly_count": len(anomalies), "anomalies": anomalies}
     except Exception as e:

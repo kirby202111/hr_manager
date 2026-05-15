@@ -59,11 +59,13 @@ def delete_skill(skill_id: int, db: Session | None = None) -> bool:
 
 def count_employee_skills_by_skill_id(skill_id: int, db: Session | None = None) -> int:
     from app.models.employee_skill import EmployeeSkill as EmployeeSkillORM
+
     with db_session(db) as session:
         return session.query(EmployeeSkillORM).filter_by(skill_id=skill_id).count()
 
 
 def count_project_requirements_by_skill_id(skill_id: int, db: Session | None = None) -> int:
     from app.models.project import ProjectSkillRequirement as ReqORM
+
     with db_session(db) as session:
         return session.query(ReqORM).filter_by(skill_id=skill_id).count()

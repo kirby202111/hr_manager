@@ -93,9 +93,7 @@ def get_important_memories(
         return [m.to_dict() for m in query.all()]
 
 
-def get_preference_by_user_tag_and_subject(
-    user_tag: str, subject: str, db: Session | None = None
-) -> dict | None:
+def get_preference_by_user_tag_and_subject(user_tag: str, subject: str, db: Session | None = None) -> dict | None:
     with db_session(db) as session:
         m = (
             session.query(MemoryORM)
@@ -227,12 +225,7 @@ def create_message(data: dict, db: Session | None = None) -> dict:
 
 def get_messages_by_session(session_id: str, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        msgs = (
-            session.query(MessageORM)
-            .filter_by(session_id=session_id)
-            .order_by(MessageORM.created_at.asc())
-            .all()
-        )
+        msgs = session.query(MessageORM).filter_by(session_id=session_id).order_by(MessageORM.created_at.asc()).all()
         return [m.to_dict() for m in msgs]
 
 
@@ -250,12 +243,7 @@ def delete_messages_by_session(session_id: str, db: Session | None = None) -> bo
 
 def list_sessions(db: Session | None = None) -> list[str]:
     with db_session(db) as session:
-        results = (
-            session.query(MessageORM.session_id)
-            .distinct()
-            .order_by(MessageORM.session_id)
-            .all()
-        )
+        results = session.query(MessageORM.session_id).distinct().order_by(MessageORM.session_id).all()
         return [r[0] for r in results]
 
 

@@ -1,15 +1,14 @@
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.services import project as project_service
-from app.services import skill_catalog as catalog_service
 from app.schemas.project import (
     ProjectCreate,
-    ProjectUpdate,
-    ProjectSkillRequirementCreate,
     ProjectMemberCreate,
+    ProjectSkillRequirementCreate,
     ProjectTimesheetCreate,
+    ProjectUpdate,
 )
 from app.schemas.skill_catalog import SkillCatalogCreate
-
+from app.services import project as project_service
+from app.services import skill_catalog as catalog_service
 
 skill = Skill(
     name="project_management",
@@ -53,7 +52,11 @@ skill = Skill(
             parameters={
                 "type": "object",
                 "properties": {
-                    "status": {"type": "string", "description": "项目状态筛选（可选）", "enum": ["planning", "active", "completed"]},
+                    "status": {
+                        "type": "string",
+                        "description": "项目状态筛选（可选）",
+                        "enum": ["planning", "active", "completed"],
+                    },
                 },
                 "required": [],
             },
@@ -77,7 +80,11 @@ skill = Skill(
                 "properties": {
                     "name": {"type": "string", "description": "项目名称"},
                     "description": {"type": "string", "description": "项目描述（可选）"},
-                    "status": {"type": "string", "description": "项目状态（默认planning）", "enum": ["planning", "active", "completed"]},
+                    "status": {
+                        "type": "string",
+                        "description": "项目状态（默认planning）",
+                        "enum": ["planning", "active", "completed"],
+                    },
                     "start_date": {"type": "string", "description": "开始日期 YYYY-MM-DD（可选）"},
                     "end_date": {"type": "string", "description": "结束日期 YYYY-MM-DD（可选）"},
                 },
@@ -86,8 +93,11 @@ skill = Skill(
             fn=lambda name, description=None, status="planning", start_date=None, end_date=None: _safe(
                 project_service.create_project,
                 ProjectCreate(
-                    name=name, description=description, status=status,
-                    start_date=start_date, end_date=end_date,
+                    name=name,
+                    description=description,
+                    status=status,
+                    start_date=start_date,
+                    end_date=end_date,
                 ),
             ),
         ),
@@ -100,7 +110,11 @@ skill = Skill(
                     "project_id": {"type": "integer", "description": "项目ID"},
                     "name": {"type": "string", "description": "项目名称（可选）"},
                     "description": {"type": "string", "description": "项目描述（可选）"},
-                    "status": {"type": "string", "description": "项目状态（可选）", "enum": ["planning", "active", "completed"]},
+                    "status": {
+                        "type": "string",
+                        "description": "项目状态（可选）",
+                        "enum": ["planning", "active", "completed"],
+                    },
                     "start_date": {"type": "string", "description": "开始日期（可选）"},
                     "end_date": {"type": "string", "description": "结束日期（可选）"},
                 },
@@ -110,8 +124,11 @@ skill = Skill(
                 project_service.update_project,
                 project_id,
                 ProjectUpdate(
-                    name=name, description=description, status=status,
-                    start_date=start_date, end_date=end_date,
+                    name=name,
+                    description=description,
+                    status=status,
+                    start_date=start_date,
+                    end_date=end_date,
                 ),
             ),
         ),
@@ -148,8 +165,10 @@ skill = Skill(
                 project_service.create_skill_requirement,
                 project_id,
                 ProjectSkillRequirementCreate(
-                    skill_id=skill_id, required_proficiency=required_proficiency,
-                    person_days=person_days, headcount=headcount,
+                    skill_id=skill_id,
+                    required_proficiency=required_proficiency,
+                    person_days=person_days,
+                    headcount=headcount,
                 ),
             ),
         ),
@@ -197,7 +216,10 @@ skill = Skill(
                 "required": ["project_id"],
             },
             fn=lambda project_id, employee_id=None, requirement_id=None: _safe(
-                project_service.list_timesheets, project_id, employee_id, requirement_id,
+                project_service.list_timesheets,
+                project_id,
+                employee_id,
+                requirement_id,
             ),
         ),
         AgentTool(
@@ -219,8 +241,11 @@ skill = Skill(
                 project_service.create_timesheet,
                 project_id,
                 ProjectTimesheetCreate(
-                    requirement_id=requirement_id, employee_id=employee_id,
-                    date=date, hours=hours, description=description,
+                    requirement_id=requirement_id,
+                    employee_id=employee_id,
+                    date=date,
+                    hours=hours,
+                    description=description,
                 ),
             ),
         ),

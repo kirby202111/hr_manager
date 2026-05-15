@@ -44,13 +44,10 @@ class SkillRouter:
             return []
 
         summaries_text = "\n".join(
-            f"- {s['name']}: {s['description']}。适用场景: {s['applicability']}"
-            for s in skill_summaries
+            f"- {s['name']}: {s['description']}。适用场景: {s['applicability']}" for s in skill_summaries
         )
 
-        system_prompt = ROUTING_SYSTEM_PROMPT.format(
-            skill_summaries=summaries_text
-        )
+        system_prompt = ROUTING_SYSTEM_PROMPT.format(skill_summaries=summaries_text)
 
         try:
             response = self._client.chat.completions.create(
@@ -59,14 +56,16 @@ class SkillRouter:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message},
                 ],
-                tools=[{
-                    "type": "function",
-                    "function": {
-                        "name": "select_skills",
-                        "description": "选择需要激活的技能",
-                        "parameters": ROUTING_OUTPUT_SCHEMA,
-                    },
-                }],
+                tools=[
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": "select_skills",
+                            "description": "选择需要激活的技能",
+                            "parameters": ROUTING_OUTPUT_SCHEMA,
+                        },
+                    }
+                ],
                 tool_choice={"type": "function", "function": {"name": "select_skills"}},
                 temperature=0.0,
             )

@@ -42,20 +42,23 @@ def get_leaves_by_employee(employee_id: int, db: Session | None = None) -> list[
 
 def get_approved_leaves_by_type(employee_id: int, leave_type: str, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        records = session.query(LeaveORM).filter_by(
-            employee_id=employee_id, leave_type=leave_type, status="approved"
-        ).all()
+        records = (
+            session.query(LeaveORM).filter_by(employee_id=employee_id, leave_type=leave_type, status="approved").all()
+        )
         return [r.to_dict() for r in records]
 
 
 def get_approved_leaves_in_range(employee_id: int, start_date, end_date, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        records = session.query(LeaveORM).filter_by(
-            employee_id=employee_id, status="approved"
-        ).filter(
-            LeaveORM.start_date <= end_date,
-            LeaveORM.end_date >= start_date,
-        ).all()
+        records = (
+            session.query(LeaveORM)
+            .filter_by(employee_id=employee_id, status="approved")
+            .filter(
+                LeaveORM.start_date <= end_date,
+                LeaveORM.end_date >= start_date,
+            )
+            .all()
+        )
         return [r.to_dict() for r in records]
 
 

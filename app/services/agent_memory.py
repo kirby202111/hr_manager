@@ -110,9 +110,7 @@ def create_reminder(memory_id: int, reminder_in: ReminderCreate, db: Session | N
     if memory_repo.get_memory_by_id(memory_id, db) is None:
         raise NotFoundError(f"记忆 {memory_id} 不存在")
     if reminder_in.reminder_type not in VALID_REMINDER_TYPES:
-        raise ValidationError(
-            f"无效的提醒类型: {reminder_in.reminder_type}，可选值: {', '.join(VALID_REMINDER_TYPES)}"
-        )
+        raise ValidationError(f"无效的提醒类型: {reminder_in.reminder_type}，可选值: {', '.join(VALID_REMINDER_TYPES)}")
     data = reminder_in.model_dump()
     data["memory_id"] = memory_id
     data["created_at"] = datetime.now(UTC)

@@ -5,7 +5,7 @@ skill = Skill(
     name="knowledge_base",
     description="电子车间知识库查询与管理",
     applicability="用户询问电子车间操作规程、安全规范、设备使用指南、质检标准等文档内容时使用，"
-                  "或需要向知识库添加、查看、删除文档时使用",
+    "或需要向知识库添加、查看、删除文档时使用",
     tools=[
         AgentTool(
             name="search_knowledge_base",
@@ -33,7 +33,9 @@ skill = Skill(
                 "required": ["title", "content"],
             },
             fn=lambda title, content, source="": kb_service.add_document_from_text(
-                title=title, content=content, source=source,
+                title=title,
+                content=content,
+                source=source,
             ),
         ),
         AgentTool(

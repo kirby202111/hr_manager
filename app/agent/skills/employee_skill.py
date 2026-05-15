@@ -1,6 +1,48 @@
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.services import employee_skill as skill_service
 from app.schemas.employee_skill import EmployeeSkillCreate, EmployeeSkillUpdate
+from app.services import employee_skill as skill_service
+
+
+def _create_skill(
+    employee_id,
+    skill_name,
+    proficiency_level,
+    skill_id=None,
+    years_of_experience=None,
+    certification=None,
+):
+    return _safe(
+        skill_service.create_skill,
+        EmployeeSkillCreate(
+            employee_id=employee_id,
+            skill_name=skill_name,
+            skill_id=skill_id,
+            proficiency_level=proficiency_level,
+            years_of_experience=years_of_experience,
+            certification=certification,
+        ),
+    )
+
+
+def _update_skill(
+    skill_id,
+    skill_name=None,
+    skill_catalog_id=None,
+    proficiency_level=None,
+    years_of_experience=None,
+    certification=None,
+):
+    return _safe(
+        skill_service.update_skill,
+        skill_id,
+        EmployeeSkillUpdate(
+            skill_name=skill_name,
+            skill_id=skill_catalog_id,
+            proficiency_level=proficiency_level,
+            years_of_experience=years_of_experience,
+            certification=certification,
+        ),
+    )
 
 
 skill = Skill(
@@ -63,18 +105,7 @@ skill = Skill(
                 },
                 "required": ["employee_id", "skill_name", "proficiency_level"],
             },
-            fn=lambda employee_id, skill_name, proficiency_level,
-                skill_id=None, years_of_experience=None, certification=None: _safe(
-                skill_service.create_skill,
-                EmployeeSkillCreate(
-                    employee_id=employee_id,
-                    skill_name=skill_name,
-                    skill_id=skill_id,
-                    proficiency_level=proficiency_level,
-                    years_of_experience=years_of_experience,
-                    certification=certification,
-                ),
-            ),
+            fn=_create_skill,
         ),
         AgentTool(
             name="update_skill",
@@ -95,18 +126,7 @@ skill = Skill(
                 },
                 "required": ["skill_id"],
             },
-            fn=lambda skill_id, skill_name=None, skill_catalog_id=None, proficiency_level=None,
-                years_of_experience=None, certification=None: _safe(
-                skill_service.update_skill,
-                skill_id,
-                EmployeeSkillUpdate(
-                    skill_name=skill_name,
-                    skill_id=skill_catalog_id,
-                    proficiency_level=proficiency_level,
-                    years_of_experience=years_of_experience,
-                    certification=certification,
-                ),
-            ),
+            fn=_update_skill,
         ),
         AgentTool(
             name="delete_skill",

@@ -44,6 +44,7 @@ def _parse_month(month: str) -> tuple[int, int]:
 def _month_to_date_range(month: str) -> tuple[date, date]:
     year, m = _parse_month(month)
     import calendar
+
     start = date(year, m, 1)
     last_day = calendar.monthrange(year, m)[1]
     end = date(year, m, last_day)
@@ -88,12 +89,14 @@ def _calculate_leave_deductions(
             days = (leave_end - leave_start).days + 1
             amount = round(daily_salary * days, 2)
             deductions += amount
-            details.append({
-                "type": "事假扣款",
-                "leave_type": leave["leave_type_name"],
-                "days": days,
-                "amount": amount,
-            })
+            details.append(
+                {
+                    "type": "事假扣款",
+                    "leave_type": leave["leave_type_name"],
+                    "days": days,
+                    "amount": amount,
+                }
+            )
     return round(deductions, 2), details
 
 

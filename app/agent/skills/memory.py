@@ -1,23 +1,19 @@
 from __future__ import annotations
 
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.services import agent_memory as memory_service
 from app.schemas.agent_memory import MemoryCreate, ReminderCreate
+from app.services import agent_memory as memory_service
 
 skill = Skill(
     name="memory",
     description="长期记忆管理：记住和回忆用户偏好、业务观察、待办提醒",
     applicability=(
-        "需要记住用户偏好、保存业务观察、设置待办提醒、"
-        "或回忆之前的对话内容时使用。适用于跨会话的上下文保持"
+        "需要记住用户偏好、保存业务观察、设置待办提醒、或回忆之前的对话内容时使用。适用于跨会话的上下文保持"
     ),
     tools=[
         AgentTool(
             name="recall_memories",
-            description=(
-                "回忆长期记忆，可按类型、分类、主题或关键词搜索。"
-                "在对话开始或需要历史上下文时调用"
-            ),
+            description=("回忆长期记忆，可按类型、分类、主题或关键词搜索。在对话开始或需要历史上下文时调用"),
             parameters={
                 "type": "object",
                 "properties": {

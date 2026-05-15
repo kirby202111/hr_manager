@@ -3,10 +3,9 @@ from __future__ import annotations
 import json
 import threading
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.config import settings
-from app.agent.protocol import BaseHistoryStore
 
 
 class InMemoryHistoryStore:
@@ -26,7 +25,7 @@ class InMemoryHistoryStore:
             msgs = self._conversations[session_id]
             if len(msgs) > settings.agent_max_history_messages:
                 system = msgs[0] if msgs and msgs[0].get("role") == "system" else None
-                rest = msgs[-(settings.agent_max_history_messages - 1):]
+                rest = msgs[-(settings.agent_max_history_messages - 1) :]
                 self._conversations[session_id] = ([system] + rest) if system else rest
 
     def clear(self, session_id: str) -> None:
@@ -44,6 +43,7 @@ class InMemoryHistoryStore:
 class SQLiteHistoryStore:
     def __init__(self) -> None:
         from app.repositories import agent_memory as repo
+
         self._repo = repo
 
     def get_messages(self, session_id: str) -> list[dict]:
@@ -63,7 +63,7 @@ class SQLiteHistoryStore:
         return messages
 
     def add_message(self, session_id: str, message: dict, user_tag: str = "default") -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         data = {
             "session_id": session_id,
             "user_tag": user_tag,

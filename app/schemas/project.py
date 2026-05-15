@@ -1,9 +1,10 @@
-from datetime import date as date_type, datetime
+from datetime import date as date_type
+from datetime import datetime
 
 from pydantic import BaseModel
 
-
 # ── Project ──────────────────────────────────────────────────
+
 
 class ProjectCreate(BaseModel):
     name: str
@@ -40,6 +41,7 @@ class ProjectListResponse(BaseModel):
 
 # ── ProjectSkillRequirement ──────────────────────────────────
 
+
 class ProjectSkillRequirementCreate(BaseModel):
     skill_id: int
     required_proficiency: str
@@ -72,6 +74,7 @@ class ProjectSkillRequirementListResponse(BaseModel):
 
 # ── ProjectMember ────────────────────────────────────────────
 
+
 class ProjectMemberCreate(BaseModel):
     employee_id: int
     role: str
@@ -99,6 +102,7 @@ class ProjectMemberListResponse(BaseModel):
 
 
 # ── ProjectTimesheet ─────────────────────────────────────────
+
 
 class ProjectTimesheetCreate(BaseModel):
     requirement_id: int
@@ -135,6 +139,7 @@ class ProjectTimesheetListResponse(BaseModel):
 
 
 # ── ProjectProgress ──────────────────────────────────────────
+
 
 class RequirementProgress(BaseModel):
     requirement_id: int

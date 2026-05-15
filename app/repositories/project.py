@@ -17,6 +17,7 @@ from app.models.project import (
 
 # ── Project ──────────────────────────────────────────────────
 
+
 def get_all_projects(status: str | None = None, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
         query = session.query(ProjectORM)
@@ -79,6 +80,7 @@ def count_members(project_id: int, db: Session | None = None) -> int:
 
 # ── ProjectSkillRequirement ──────────────────────────────────
 
+
 def get_requirements_by_project(project_id: int, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
         reqs = session.query(ReqORM).filter_by(project_id=project_id).all()
@@ -132,6 +134,7 @@ def delete_requirement(req_id: int, db: Session | None = None) -> bool:
 
 # ── ProjectMember ────────────────────────────────────────────
 
+
 def get_members_by_project(project_id: int, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
         members = session.query(MemberORM).filter_by(project_id=project_id).all()
@@ -146,9 +149,7 @@ def get_member_by_id(member_id: int, db: Session | None = None) -> dict | None:
 
 def get_member_by_employee_project(employee_id: int, project_id: int, db: Session | None = None) -> dict | None:
     with db_session(db) as session:
-        member = session.query(MemberORM).filter_by(
-            employee_id=employee_id, project_id=project_id
-        ).first()
+        member = session.query(MemberORM).filter_by(employee_id=employee_id, project_id=project_id).first()
         return member.to_dict() if member else None
 
 
@@ -185,6 +186,7 @@ def delete_member(member_id: int, db: Session | None = None) -> bool:
 
 
 # ── ProjectTimesheet ─────────────────────────────────────────
+
 
 def get_timesheets_by_project(
     project_id: int,
@@ -242,6 +244,7 @@ def delete_timesheet(timesheet_id: int, db: Session | None = None) -> bool:
 
 # ── Progress aggregation ─────────────────────────────────────
 
+
 def get_progress_by_project(project_id: int, db: Session | None = None) -> dict:
     with db_session(db) as session:
         requirements = session.query(ReqORM).filter_by(project_id=project_id).all()
@@ -250,32 +253,38 @@ def get_progress_by_project(project_id: int, db: Session | None = None) -> dict:
         total_used = 0.0
 
         for req in requirements:
-            used_hours = session.query(func.coalesce(func.sum(TimesheetORM.hours), 0)).filter_by(
-                requirement_id=req.id
-            ).scalar()
+            used_hours = (
+                session.query(func.coalesce(func.sum(TimesheetORM.hours), 0)).filter_by(requirement_id=req.id).scalar()
+            )
             used_days = round(used_hours / 8.0, 2)
             budget = req.person_days
             progress = round(used_days / budget * 100, 1) if budget > 0 else 0.0
             total_budget += budget
             total_used += used_days
-            by_requirement.append({
-                "requirement_id": req.id,
-                "skill_id": req.skill_id,
-                "budget_person_days": budget,
-                "used_person_days": used_days,
-                "progress": min(progress, 100.0),
-            })
+            by_requirement.append(
+                {
+                    "requirement_id": req.id,
+                    "skill_id": req.skill_id,
+                    "budget_person_days": budget,
+                    "used_person_days": used_days,
+                    "progress": min(progress, 100.0),
+                }
+            )
 
         members = session.query(MemberORM).filter_by(project_id=project_id).all()
         by_member = []
         for m in members:
-            used_hours = session.query(func.coalesce(func.sum(TimesheetORM.hours), 0)).filter_by(
-                employee_id=m.employee_id, project_id=project_id
-            ).scalar()
-            by_member.append({
-                "employee_id": m.employee_id,
-                "total_person_days": round(used_hours / 8.0, 2),
-            })
+            used_hours = (
+                session.query(func.coalesce(func.sum(TimesheetORM.hours), 0))
+                .filter_by(employee_id=m.employee_id, project_id=project_id)
+                .scalar()
+            )
+            by_member.append(
+                {
+                    "employee_id": m.employee_id,
+                    "total_person_days": round(used_hours / 8.0, 2),
+                }
+            )
 
         overall = round(total_used / total_budget * 100, 1) if total_budget > 0 else 0.0
 

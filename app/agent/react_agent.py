@@ -1,16 +1,17 @@
+# ruff: noqa: E501
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
+from datetime import UTC
 
-from openai import OpenAI, APIError, RateLimitError, APITimeoutError
+from openai import APIError, APITimeoutError, OpenAI, RateLimitError
 
-from app.config import settings
 from app.agent.protocol import AgentTool, BaseHistoryStore
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skill_router import SkillRouter
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +92,11 @@ def _workflow_to_tool(wf_name: str, wf_fn) -> AgentTool:
 
 def _build_hook_memory(func_name: str, result: dict, context: dict) -> dict | None:
     """Build a memory record from tool hook results."""
-    from app.schemas.agent_memory import MemoryCreate
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    now = datetime.now(timezone.utc)
+    from app.schemas.agent_memory import MemoryCreate
+
+    now = datetime.now(UTC)
     user_tag = context.get("user_tag", "default")
     session_id = context.get("session_id", "agent")
 
@@ -106,10 +108,14 @@ def _build_hook_memory(func_name: str, result: dict, context: dict) -> dict | No
         emp_id = emp_info.get("id", "")
         content = f"员工{name}(ID:{emp_id})入职流程已启动"
         return MemoryCreate(
-            session_id=session_id, user_tag=user_tag,
-            memory_type="fact", category="onboarding",
-            subject=f"employee:{emp_id}", content=content,
-            source="agent_observed", importance=4,
+            session_id=session_id,
+            user_tag=user_tag,
+            memory_type="fact",
+            category="onboarding",
+            subject=f"employee:{emp_id}",
+            content=content,
+            source="agent_observed",
+            importance=4,
         ).model_dump()
 
     if func_name.startswith("analyze_"):
@@ -121,10 +127,14 @@ def _build_hook_memory(func_name: str, result: dict, context: dict) -> dict | No
         category = "analytics"
         subject = f"analysis:{func_name}"
         return MemoryCreate(
-            session_id=session_id, user_tag=user_tag,
-            memory_type="observation", category=category,
-            subject=subject, content=content,
-            source="agent_observed", importance=2,
+            session_id=session_id,
+            user_tag=user_tag,
+            memory_type="observation",
+            category=category,
+            subject=subject,
+            content=content,
+            source="agent_observed",
+            importance=2,
             expires_at=now.isoformat(),
         ).model_dump()
 
@@ -136,10 +146,14 @@ def _build_hook_memory(func_name: str, result: dict, context: dict) -> dict | No
         if len(content) > 500:
             content = content[:500] + "..."
         return MemoryCreate(
-            session_id=session_id, user_tag=user_tag,
-            memory_type="observation", category="project",
-            subject=f"project:{project_id}_progress", content=content,
-            source="agent_observed", importance=2,
+            session_id=session_id,
+            user_tag=user_tag,
+            memory_type="observation",
+            category="project",
+            subject=f"project:{project_id}_progress",
+            content=content,
+            source="agent_observed",
+            importance=2,
             expires_at=now.isoformat(),
         ).model_dump()
 
@@ -182,12 +196,17 @@ class ReActAgent:
 
     def _inject_memory_context(self, session_id: str, user_tag: str) -> None:
         from app.services import agent_memory as memory_service
+
         try:
             # 告知 LLM 当前用户的 user_tag，使其能正确调用记忆工具
-            self._history.add_message(session_id, {
-                "role": "system",
-                "content": f"当前用户的标识(user_tag)为：{user_tag}。在调用recall_memories、save_memory、check_reminders等记忆工具时，请使用此user_tag。",
-            }, user_tag=user_tag)
+            self._history.add_message(
+                session_id,
+                {
+                    "role": "system",
+                    "content": f"当前用户的标识(user_tag)为：{user_tag}。在调用recall_memories、save_memory、check_reminders等记忆工具时，请使用此user_tag。",
+                },
+                user_tag=user_tag,
+            )
 
             # 自动注入最近的重要记忆，避免完全依赖 Agent 主动查询
             recent = memory_service.recall_memories(user_tag, limit=5)
@@ -195,10 +214,14 @@ class ReActAgent:
                 lines = ["以下是该用户的近期记忆："]
                 for m in recent.memories:
                     lines.append(f"- [{m.memory_type}/{m.category}] {m.content}")
-                self._history.add_message(session_id, {
-                    "role": "system",
-                    "content": "\n".join(lines),
-                }, user_tag=user_tag)
+                self._history.add_message(
+                    session_id,
+                    {
+                        "role": "system",
+                        "content": "\n".join(lines),
+                    },
+                    user_tag=user_tag,
+                )
 
             reminders = memory_service.check_pending_reminders(user_tag)
             if reminders.reminders:
@@ -206,10 +229,14 @@ class ReActAgent:
                 for r in reminders.reminders:
                     mem = memory_service.get_memory(r.memory_id)
                     lines.append(f"- {mem.content}（提醒时间：{r.trigger_at}）")
-                self._history.add_message(session_id, {
-                    "role": "system",
-                    "content": "\n".join(lines),
-                }, user_tag=user_tag)
+                self._history.add_message(
+                    session_id,
+                    {
+                        "role": "system",
+                        "content": "\n".join(lines),
+                    },
+                    user_tag=user_tag,
+                )
         except Exception as e:
             logger.warning("Failed to inject memory context: %s", e)
 
@@ -222,9 +249,7 @@ class ReActAgent:
             tool_map = self._registry.get_tool_map()
             return [t.to_openai_tool() for t in all_tools], tool_map
 
-        skill_names = self._router.route(
-            message, self._registry.get_skill_summaries()
-        )
+        skill_names = self._router.route(message, self._registry.get_skill_summaries())
 
         if not skill_names:
             skill_names = ["employee_management"]
@@ -251,8 +276,9 @@ class ReActAgent:
             memory_data = _build_hook_memory(func_name, result, self._context)
             if memory_data is None:
                 return
-            from app.services import agent_memory as memory_service
             from app.schemas.agent_memory import MemoryCreate
+            from app.services import agent_memory as memory_service
+
             memory_service.save_memory(MemoryCreate(**memory_data))
         except Exception as e:
             logger.warning("Tool memory hook failed for %s: %s", func_name, e)
@@ -283,8 +309,9 @@ class ReActAgent:
             items = json.loads(raw)
             if not isinstance(items, list):
                 return
-            from app.services import agent_memory as memory_service
             from app.schemas.agent_memory import MemoryCreate
+            from app.services import agent_memory as memory_service
+
             for item in items:
                 if not isinstance(item, dict):
                     continue
@@ -348,11 +375,15 @@ class ReActAgent:
 
                 self._run_tool_hook(func_name, result)
 
-                self._history.add_message(session_id, {
-                    "role": "tool",
-                    "tool_call_id": tool_call["id"],
-                    "content": json.dumps(result, ensure_ascii=False, default=str),
-                }, user_tag=effective_tag)
+                self._history.add_message(
+                    session_id,
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call["id"],
+                        "content": json.dumps(result, ensure_ascii=False, default=str),
+                    },
+                    user_tag=effective_tag,
+                )
                 messages = self._history.get_messages(session_id)
         else:
             final_reply = "抱歉，处理过程中超出了最大迭代次数，请简化您的问题后重试。"
@@ -456,16 +487,23 @@ class ReActAgent:
 
                 self._run_tool_hook(func_name, result)
 
-                self._history.add_message(session_id, {
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": json.dumps(result, ensure_ascii=False, default=str),
-                }, user_tag=effective_tag)
+                self._history.add_message(
+                    session_id,
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps(result, ensure_ascii=False, default=str),
+                    },
+                    user_tag=effective_tag,
+                )
 
-            yield {"event": "tool_result", "data": json.dumps(
-                [tc["name"] for tc in tool_calls_accum.values()],
-                ensure_ascii=False,
-            )}
+            yield {
+                "event": "tool_result",
+                "data": json.dumps(
+                    [tc["name"] for tc in tool_calls_accum.values()],
+                    ensure_ascii=False,
+                ),
+            }
 
         final_messages = self._history.get_messages(session_id)
         yield {"event": "error", "data": "超出最大迭代次数"}

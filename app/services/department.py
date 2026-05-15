@@ -62,5 +62,6 @@ def get_department_employees(department_id: int, db: Session | None = None) -> l
     if dept is None:
         raise NotFoundError(f"Department {department_id} not found")
     from app.schemas.employee import EmployeeResponse
+
     employees = employee_repo.get_employees_by_department(department_id, db)
     return [EmployeeResponse(**e) for e in employees]

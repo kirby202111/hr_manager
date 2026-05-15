@@ -1,7 +1,7 @@
 from app.agent.protocol import Skill, _safe
+from app.schemas.employee import EmployeeCreate
 from app.services import employee as employee_service
 from app.services import leave as leave_service
-from app.schemas.employee import EmployeeCreate
 
 
 def onboard_employee(name: str = "", salary: float = 0, department_id: int | None = None, **kwargs) -> dict:

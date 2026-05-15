@@ -57,5 +57,3 @@ def reject_leave(leave_id: int, approval: LeaveApproval, db: Session = Depends(g
 @router.delete("/{leave_id}")
 def cancel_leave(leave_id: int, db: Session = Depends(get_db)):
     return leave_service.cancel_leave(leave_id, db)
-
-

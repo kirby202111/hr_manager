@@ -13,15 +13,11 @@ class SkillRegistry:
             raise ValueError(f"Skill '{skill.name}' already registered")
         for tool in skill.tools:
             if tool.name in self._tool_to_skill:
-                raise ValueError(
-                    f"Tool '{tool.name}' already belongs to skill "
-                    f"'{self._tool_to_skill[tool.name]}'"
-                )
+                raise ValueError(f"Tool '{tool.name}' already belongs to skill '{self._tool_to_skill[tool.name]}'")
         for wf_name in skill.workflows:
             if wf_name in self._tool_to_skill:
                 raise ValueError(
-                    f"Workflow '{wf_name}' conflicts with existing tool/skill name "
-                    f"in '{self._tool_to_skill[wf_name]}'"
+                    f"Workflow '{wf_name}' conflicts with existing tool/skill name in '{self._tool_to_skill[wf_name]}'"
                 )
         self._skills[skill.name] = skill
         for tool in skill.tools:
@@ -60,11 +56,7 @@ class SkillRegistry:
         return result
 
     def get_skill_summaries(self) -> list[dict]:
-        return [
-            s.to_openai_skill_summary()
-            for s in self._skills.values()
-            if s.enabled
-        ]
+        return [s.to_openai_skill_summary() for s in self._skills.values() if s.enabled]
 
     def get_tools_for_skills(self, skill_names: list[str]) -> list[AgentTool]:
         tools: list[AgentTool] = []

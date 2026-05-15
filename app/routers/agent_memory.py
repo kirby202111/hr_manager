@@ -34,9 +34,7 @@ def recall_memories(
     limit: int = 20,
     db: Session = Depends(get_db),
 ):
-    return memory_service.recall_memories(
-        user_tag, memory_type, category, subject, keyword, limit, db
-    )
+    return memory_service.recall_memories(user_tag, memory_type, category, subject, keyword, limit, db)
 
 
 @router.get("/reminders/pending", response_model=ReminderListResponse)
