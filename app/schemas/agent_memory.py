@@ -77,3 +77,19 @@ class ReminderResponse(BaseModel):
 class ReminderListResponse(BaseModel):
     reminders: list[ReminderResponse]
     total: int
+
+
+class ConversationMessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str | None = None
+    tool_call_id: str | None = None
+    tool_calls: str | None = None
+    reasoning_content: str | None = None
+    user_tag: str
+    created_at: datetime
+
+
+class ConversationMessageListResponse(BaseModel):
+    messages: list[ConversationMessageResponse]
+    total: int

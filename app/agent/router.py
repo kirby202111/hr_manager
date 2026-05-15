@@ -12,6 +12,7 @@ from app.agent.history import SQLiteHistoryStore
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skills import register_all_skills
 from app.config import settings
+from app.schemas.agent_memory import ConversationMessageListResponse
 
 
 def create_agent() -> tuple[ReActAgent, SkillRegistry, BaseHistoryStore]:
@@ -29,6 +30,14 @@ def create_agent() -> tuple[ReActAgent, SkillRegistry, BaseHistoryStore]:
 _agent, _skill_registry, _history_store = create_agent()
 
 router = APIRouter(prefix="/agent", tags=["AI助手"])
+
+
+def _format_sse_event(event: str, data: str) -> str:
+    lines = str(data).splitlines()
+    if not lines:
+        lines = [""]
+    data_lines = "\n".join(f"data: {line}" for line in lines)
+    return f"event: {event}\n{data_lines}\n\n"
 
 
 class ChatRequest(BaseModel):
@@ -60,7 +69,7 @@ async def chat_stream_endpoint(req: ChatRequest):
 
     async def event_generator():
         async for event in _agent.chat_stream(session_id, req.message, user_tag=user_tag):
-            yield f"event: {event['event']}\ndata: {event['data']}\n\n"
+            yield _format_sse_event(event["event"], event["data"])
 
     return StreamingResponse(
         event_generator(),
@@ -70,8 +79,15 @@ async def chat_stream_endpoint(req: ChatRequest):
 
 
 @router.get("/sessions")
-def get_sessions():
-    return {"sessions": _history_store.list_sessions()}
+def get_sessions(user_tag: str | None = None):
+    return {"sessions": _history_store.list_sessions(user_tag=user_tag)}
+
+
+@router.get("/sessions/{session_id}/messages", response_model=ConversationMessageListResponse)
+def get_session_messages(session_id: str):
+    from app.services.agent_memory import get_session_messages as _get_session_messages
+
+    return _get_session_messages(session_id)
 
 
 @router.delete("/sessions/{session_id}")

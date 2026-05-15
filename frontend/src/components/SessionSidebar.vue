@@ -4,6 +4,16 @@
       <span class="sidebar-title">对话管理</span>
       <el-button :icon="Plus" circle size="small" @click="handleCreate" />
     </div>
+    <div class="user-tag-selector">
+      <el-input
+        v-model="localUserTag"
+        size="small"
+        placeholder="用户标识"
+        clearable
+        @change="handleUserTagChange"
+        @keyup.enter="handleUserTagChange"
+      />
+    </div>
     <div class="session-list">
       <div
         v-for="sid in sessions"
@@ -35,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Plus, Delete, ChatDotRound, Setting } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
@@ -43,10 +53,15 @@ import { useChatStore } from '../stores/chat'
 import SkillPanel from './SkillPanel.vue'
 
 const store = useChatStore()
-const { sessions, currentSessionId, messages } = storeToRefs(store)
+const { sessions, currentSessionId, messages, userTag } = storeToRefs(store)
 const { selectSession, createSession, deleteSession } = store
 
 const showSkills = ref(false)
+const localUserTag = ref(userTag.value)
+
+watch(userTag, (val) => {
+  localUserTag.value = val
+})
 
 function getSessionLabel(sid: string): string {
   const msgs = messages.value[sid]
@@ -59,6 +74,10 @@ function getSessionLabel(sid: string): string {
 
 function handleCreate() {
   createSession()
+}
+
+async function handleUserTagChange() {
+  await store.setUserTag(localUserTag.value)
 }
 
 async function handleDelete(sid: string) {
@@ -91,6 +110,11 @@ async function handleDelete(sid: string) {
 .sidebar-title {
   font-weight: 600;
   font-size: 15px;
+}
+
+.user-tag-selector {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--chat-border);
 }
 
 .session-list {

@@ -173,9 +173,10 @@ class ReActAgent:
         self._context: dict = {}
 
     def _init_session(self, session_id: str, user_tag: str | None = None) -> None:
+        effective_tag = user_tag or settings.default_user_tag
         msgs = self._history.get_messages(session_id)
         if not msgs:
-            self._history.add_message(session_id, {"role": "system", "content": SYSTEM_PROMPT})
+            self._history.add_message(session_id, {"role": "system", "content": SYSTEM_PROMPT}, user_tag=effective_tag)
             if user_tag:
                 self._inject_memory_context(session_id, user_tag)
 
@@ -186,7 +187,7 @@ class ReActAgent:
             self._history.add_message(session_id, {
                 "role": "system",
                 "content": f"当前用户的标识(user_tag)为：{user_tag}。在调用recall_memories、save_memory、check_reminders等记忆工具时，请使用此user_tag。",
-            })
+            }, user_tag=user_tag)
 
             # 自动注入最近的重要记忆，避免完全依赖 Agent 主动查询
             recent = memory_service.recall_memories(user_tag, limit=5)
@@ -197,7 +198,7 @@ class ReActAgent:
                 self._history.add_message(session_id, {
                     "role": "system",
                     "content": "\n".join(lines),
-                })
+                }, user_tag=user_tag)
 
             reminders = memory_service.check_pending_reminders(user_tag)
             if reminders.reminders:
@@ -208,7 +209,7 @@ class ReActAgent:
                 self._history.add_message(session_id, {
                     "role": "system",
                     "content": "\n".join(lines),
-                })
+                }, user_tag=user_tag)
         except Exception as e:
             logger.warning("Failed to inject memory context: %s", e)
 
@@ -301,7 +302,7 @@ class ReActAgent:
         effective_tag = user_tag or settings.default_user_tag
         self._context = {"session_id": session_id, "user_tag": effective_tag}
         self._init_session(session_id, effective_tag)
-        self._history.add_message(session_id, {"role": "user", "content": message})
+        self._history.add_message(session_id, {"role": "user", "content": message}, user_tag=effective_tag)
         messages = self._history.get_messages(session_id)
 
         tools, tool_map = self._resolve_tools(message)
@@ -326,7 +327,7 @@ class ReActAgent:
             assistant_msg = choice.message.model_dump()
             if getattr(choice.message, "reasoning_content", None):
                 assistant_msg["reasoning_content"] = choice.message.reasoning_content
-            self._history.add_message(session_id, assistant_msg)
+            self._history.add_message(session_id, assistant_msg, user_tag=effective_tag)
             messages = self._history.get_messages(session_id)
 
             if not assistant_msg.get("tool_calls"):
@@ -351,7 +352,7 @@ class ReActAgent:
                     "role": "tool",
                     "tool_call_id": tool_call["id"],
                     "content": json.dumps(result, ensure_ascii=False, default=str),
-                })
+                }, user_tag=effective_tag)
                 messages = self._history.get_messages(session_id)
         else:
             final_reply = "抱歉，处理过程中超出了最大迭代次数，请简化您的问题后重试。"
@@ -363,7 +364,7 @@ class ReActAgent:
         effective_tag = user_tag or settings.default_user_tag
         self._context = {"session_id": session_id, "user_tag": effective_tag}
         self._init_session(session_id, effective_tag)
-        self._history.add_message(session_id, {"role": "user", "content": message})
+        self._history.add_message(session_id, {"role": "user", "content": message}, user_tag=effective_tag)
 
         tools, tool_map = self._resolve_tools(message)
 
@@ -429,7 +430,7 @@ class ReActAgent:
                     }
                     for _, tc in sorted(tool_calls_accum.items())
                 ]
-            self._history.add_message(session_id, assistant_msg)
+            self._history.add_message(session_id, assistant_msg, user_tag=effective_tag)
 
             if not tool_calls_accum:
                 final_messages = self._history.get_messages(session_id)
@@ -459,7 +460,7 @@ class ReActAgent:
                     "role": "tool",
                     "tool_call_id": tc["id"],
                     "content": json.dumps(result, ensure_ascii=False, default=str),
-                })
+                }, user_tag=effective_tag)
 
             yield {"event": "tool_result", "data": json.dumps(
                 [tc["name"] for tc in tool_calls_accum.values()],

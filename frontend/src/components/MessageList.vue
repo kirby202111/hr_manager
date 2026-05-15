@@ -1,11 +1,16 @@
 <template>
   <div ref="scrollContainer" class="message-list" @scroll="onScroll">
+    <div v-if="store.isLoadingMessages" class="loading-messages">
+      <el-icon class="is-loading"><Loading /></el-icon>
+      <span>加载历史消息...</span>
+    </div>
     <MessageItem v-for="msg in msgs" :key="msg.id" :message="msg" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { Loading } from '@element-plus/icons-vue'
 import { useChatStore } from '../stores/chat'
 import { useAutoScroll } from '../composables/useAutoScroll'
 import MessageItem from './MessageItem.vue'
@@ -27,5 +32,15 @@ const { onScroll } = useAutoScroll(scrollContainer, trigger)
   flex: 1;
   overflow-y: auto;
   padding-bottom: 16px;
+}
+
+.loading-messages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  color: #909399;
+  font-size: 13px;
 }
 </style>

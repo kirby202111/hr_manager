@@ -5,7 +5,9 @@ export function useChat() {
 
   async function init() {
     await store.fetchSessions()
-    if (!store.currentSessionId && store.sessions.length === 0) {
+    if (store.currentSessionId) {
+      await store.selectSession(store.currentSessionId)
+    } else if (store.sessions.length === 0) {
       store.createSession()
     }
   }
@@ -14,6 +16,8 @@ export function useChat() {
     sessions: store.sessions,
     currentSessionId: store.currentSessionId,
     messages: store.messages,
+    userTag: store.userTag,
+    isLoadingMessages: store.isLoadingMessages,
     isStreaming: store.isStreaming,
     currentMessages: store.currentMessages,
     selectSession: store.selectSession,
@@ -21,6 +25,7 @@ export function useChat() {
     deleteSession: store.deleteSession,
     sendMessage: store.sendMessage,
     stopStreaming: store.stopStreaming,
+    setUserTag: store.setUserTag,
     init,
   }
 }

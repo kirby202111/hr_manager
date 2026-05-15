@@ -47,6 +47,7 @@ class ConversationMessage(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     session_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    user_tag: Mapped[str] = mapped_column(String(100), nullable=False, default="default", index=True)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     content: Mapped[str | None] = mapped_column(String, nullable=True)
     tool_call_id: Mapped[str | None] = mapped_column(String(100), nullable=True)

@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import type { ChatMessage } from '../types/chat'
+import type { BackendMessage, ChatMessage, ToolCallInfo } from '../types/chat'
 import * as chatApi from '../api/chat'
 import { streamChat } from '../api/sse'
 
 const STORAGE_KEY = 'hr-chat-messages'
 const SESSIONS_KEY = 'hr-chat-sessions'
+const USER_TAG_KEY = 'hr-chat-user-tag'
 
 function generateId(): string {
   return crypto.randomUUID()
@@ -24,10 +25,37 @@ function saveToStorage(key: string, value: unknown) {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+function parseToolCalls(raw?: string | null): ToolCallInfo[] | undefined {
+  if (!raw) return undefined
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return undefined
+    const names = parsed
+      .map((tc) => tc?.function?.name)
+      .filter((name): name is string => typeof name === 'string' && name.length > 0)
+    return names.length > 0 ? [{ names, status: 'completed' }] : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function toChatMessage(message: BackendMessage): ChatMessage | null {
+  if (message.role !== 'user' && message.role !== 'assistant') return null
+  return {
+    id: String(message.id),
+    role: message.role,
+    content: message.content || '',
+    timestamp: new Date(message.created_at).getTime(),
+    toolCalls: parseToolCalls(message.tool_calls),
+  }
+}
+
 export const useChatStore = defineStore('chat', () => {
   const sessions = ref<string[]>(loadFromStorage(SESSIONS_KEY, []))
   const currentSessionId = ref<string | null>(null)
   const messages = ref<Record<string, ChatMessage[]>>(loadFromStorage(STORAGE_KEY, {}))
+  const userTag = ref<string>(loadFromStorage(USER_TAG_KEY, 'default'))
+  const isLoadingMessages = ref(false)
   const isStreaming = ref(false)
   const streamingMessageId = ref<string | null>(null)
   const abortController = ref<AbortController | null>(null)
@@ -37,15 +65,26 @@ export const useChatStore = defineStore('chat', () => {
     saveToStorage(STORAGE_KEY, messages.value)
   }, { deep: true })
 
+  watch(userTag, () => {
+    saveToStorage(USER_TAG_KEY, userTag.value)
+  })
+
+  function isStreamingForSession(sessionId: string): boolean {
+    return isStreaming.value && currentSessionId.value === sessionId
+  }
+
   async function fetchSessions() {
     try {
-      const { data } = await chatApi.getSessions()
+      const { data } = await chatApi.getSessions(userTag.value)
       const backendSessions = data.sessions
       for (const sid of backendSessions) {
         if (!sessions.value.includes(sid)) {
           sessions.value.push(sid)
         }
       }
+      sessions.value = sessions.value.filter(sid =>
+        backendSessions.includes(sid) || isStreamingForSession(sid),
+      )
       if (!currentSessionId.value && sessions.value.length > 0) {
         currentSessionId.value = sessions.value[0]
       }
@@ -57,8 +96,19 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
-  function selectSession(sessionId: string) {
+  async function selectSession(sessionId: string) {
     currentSessionId.value = sessionId
+    isLoadingMessages.value = true
+    try {
+      const { data } = await chatApi.getSessionMessages(sessionId)
+      messages.value[sessionId] = data.messages
+        .map(toChatMessage)
+        .filter((msg): msg is ChatMessage => msg !== null)
+    } catch {
+      if (!messages.value[sessionId]) messages.value[sessionId] = []
+    } finally {
+      isLoadingMessages.value = false
+    }
   }
 
   function createSession(): string {
@@ -119,7 +169,7 @@ export const useChatStore = defineStore('chat', () => {
 
     try {
       await streamChat(
-        { message: text.trim(), session_id: sessionId },
+        { message: text.trim(), session_id: sessionId, user_tag: userTag.value },
         {
           onMessage(delta) {
             const msg = messages.value[sessionId!]?.find(m => m.id === assistantMsg.id)
@@ -194,10 +244,27 @@ export const useChatStore = defineStore('chat', () => {
     finalizeStream()
   }
 
+  async function setUserTag(tag: string) {
+    const normalized = tag.trim() || 'default'
+    if (normalized === userTag.value) return
+    userTag.value = normalized
+    sessions.value = []
+    messages.value = {}
+    currentSessionId.value = null
+    await fetchSessions()
+    if (currentSessionId.value) {
+      await selectSession(currentSessionId.value)
+    } else {
+      createSession()
+    }
+  }
+
   return {
     sessions,
     currentSessionId,
     messages,
+    userTag,
+    isLoadingMessages,
     isStreaming,
     streamingMessageId,
     fetchSessions,
@@ -207,5 +274,6 @@ export const useChatStore = defineStore('chat', () => {
     currentMessages,
     sendMessage,
     stopStreaming,
+    setUserTag,
   }
 })

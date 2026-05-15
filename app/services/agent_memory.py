@@ -8,6 +8,8 @@ from app.schemas.agent_memory import (
     VALID_MEMORY_TYPES,
     VALID_REMINDER_TYPES,
     VALID_SOURCES,
+    ConversationMessageListResponse,
+    ConversationMessageResponse,
     MemoryCreate,
     MemoryListResponse,
     MemoryResponse,
@@ -154,6 +156,14 @@ def dismiss_reminder(reminder_id: int) -> dict:
     if not memory_repo.delete_reminder(reminder_id):
         raise HTTPException(status_code=404, detail=f"提醒 {reminder_id} 不存在")
     return {"message": f"提醒 {reminder_id} 已删除"}
+
+
+def get_session_messages(session_id: str) -> ConversationMessageListResponse:
+    messages = memory_repo.get_messages_by_session(session_id)
+    return ConversationMessageListResponse(
+        messages=[ConversationMessageResponse(**m) for m in messages],
+        total=len(messages),
+    )
 
 
 def cleanup_expired() -> dict:

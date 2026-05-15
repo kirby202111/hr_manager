@@ -12,14 +12,16 @@ from app.agent.protocol import BaseHistoryStore
 class InMemoryHistoryStore:
     def __init__(self) -> None:
         self._conversations: dict[str, list[dict]] = defaultdict(list)
+        self._session_tags: dict[str, str] = {}
         self._lock = threading.Lock()
 
     def get_messages(self, session_id: str) -> list[dict]:
         with self._lock:
             return list(self._conversations[session_id])
 
-    def add_message(self, session_id: str, message: dict) -> None:
+    def add_message(self, session_id: str, message: dict, user_tag: str = "default") -> None:
         with self._lock:
+            self._session_tags[session_id] = user_tag
             self._conversations[session_id].append(message)
             msgs = self._conversations[session_id]
             if len(msgs) > settings.agent_max_history_messages:
@@ -30,10 +32,13 @@ class InMemoryHistoryStore:
     def clear(self, session_id: str) -> None:
         with self._lock:
             self._conversations.pop(session_id, None)
+            self._session_tags.pop(session_id, None)
 
-    def list_sessions(self) -> list[str]:
+    def list_sessions(self, user_tag: str | None = None) -> list[str]:
         with self._lock:
-            return list(self._conversations.keys())
+            if user_tag is None:
+                return list(self._conversations.keys())
+            return [sid for sid in self._conversations if self._session_tags.get(sid, "default") == user_tag]
 
 
 class SQLiteHistoryStore:
@@ -57,10 +62,11 @@ class SQLiteHistoryStore:
             messages.append(msg)
         return messages
 
-    def add_message(self, session_id: str, message: dict) -> None:
+    def add_message(self, session_id: str, message: dict, user_tag: str = "default") -> None:
         now = datetime.now(timezone.utc)
         data = {
             "session_id": session_id,
+            "user_tag": user_tag,
             "role": message.get("role", "user"),
             "content": message.get("content"),
             "tool_call_id": message.get("tool_call_id"),
@@ -77,5 +83,7 @@ class SQLiteHistoryStore:
     def clear(self, session_id: str) -> None:
         self._repo.delete_messages_by_session(session_id)
 
-    def list_sessions(self) -> list[str]:
-        return self._repo.list_sessions()
+    def list_sessions(self, user_tag: str | None = None) -> list[str]:
+        if user_tag is None:
+            return self._repo.list_sessions()
+        return self._repo.list_sessions_by_user_tag(user_tag)

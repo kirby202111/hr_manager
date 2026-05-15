@@ -255,6 +255,18 @@ def list_sessions() -> list[str]:
         return [r[0] for r in results]
 
 
+def list_sessions_by_user_tag(user_tag: str) -> list[str]:
+    with SessionLocal() as session:
+        results = (
+            session.query(MessageORM.session_id)
+            .filter_by(user_tag=user_tag)
+            .distinct()
+            .order_by(MessageORM.session_id)
+            .all()
+        )
+        return [r[0] for r in results]
+
+
 def trim_session_messages(session_id: str, max_messages: int) -> None:
     with SessionLocal() as session:
         count = session.query(MessageORM).filter_by(session_id=session_id).count()
