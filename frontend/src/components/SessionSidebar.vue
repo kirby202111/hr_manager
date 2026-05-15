@@ -69,7 +69,7 @@ function getSessionLabel(sid: string): string {
     const first = msgs.find(m => m.role === 'user')
     if (first) return first.content.slice(0, 20) + (first.content.length > 20 ? '...' : '')
   }
-  return sid.slice(0, 8) + '...'
+  return '新对话'
 }
 
 function handleCreate() {
