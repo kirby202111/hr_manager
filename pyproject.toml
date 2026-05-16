@@ -1,7 +1,7 @@
 [project]
-name = "hr-manager"
+name = "workforce-ops"
 version = "0.1.0"
-description = "Add your description here"
+description = "Workforce operations system for manufacturing shopfloor staffing, skills, shifts, and qualifications."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

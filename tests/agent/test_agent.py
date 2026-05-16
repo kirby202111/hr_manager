@@ -474,7 +474,7 @@ class TestBuildHookMemory:
         assert _build_hook_memory("unknown_func", result, ctx) is None
 
     def test_query_project_progress_success(self):
-        result = {"project": "HR V2", "progress": 60}
+        result = {"project": "V2", "progress": 60}
         ctx = {"session_id": "sess1", "user_tag": "user1"}
         mem = _build_hook_memory("query_project_progress", result, ctx)
         assert mem is not None

@@ -1,7 +1,7 @@
 <template>
   <div class="welcome-screen">
     <el-icon :size="48" color="#409eff"><ChatDotRound /></el-icon>
-    <h2>HR 智能助手</h2>
+    <h2>生产智能助手</h2>
     <p class="welcome-desc">我可以帮助您查询员工信息、考勤记录、薪资数据等，请选择下方问题或直接输入</p>
     <div class="suggestion-chips">
       <el-button

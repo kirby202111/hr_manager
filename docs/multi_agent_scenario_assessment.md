@@ -53,7 +53,7 @@
 | 员工画像摘要 | employee、attendance、leave、employee_skill、memory | 需要汇总多个维度，multi-agent 可提升结构化表达和遗漏检查 |
 | 项目进度查询与摘要 | project、employee_skill、timesheet | 需要汇总项目成员、工时、技能需求和进度，但通常仍是报告型任务 |
 | 技能缺口分析 | project、skill_catalog、employee_skill | 需要比对项目需求与员工技能，适合拆成需求分析和匹配分析两个角色 |
-| 管理层 HR 周报 / 月报 | analytics、attendance、leave、payroll、project | 需要多模块汇总和叙事表达，可引入 Report Agent 和 Review Agent |
+| 管理层周报 / 月报 | analytics、attendance、leave、payroll、project | 需要多模块汇总和叙事表达，可引入 Report Agent 和 Review Agent |
 | 制度问答 + 轻量业务建议 | knowledge_base、leave、attendance | 需要结合制度和当前数据，但不直接执行处罚或审批时，可以先轻量处理 |
 | 会话记忆驱动的个性化回复 | memory、knowledge_base、各业务模块 | 记忆可能影响回答风格和上下文选择，可考虑独立 Memory Agent 做上下文筛选 |
 | 异常数据解释 | attendance、payroll、leave | 需要判断异常来自缺勤、请假、数据缺失还是规则冲突，可由多个角色交叉验证 |
@@ -85,7 +85,7 @@
 | 请假审批建议 | leave、attendance、employee、department、knowledge_base | 需要考虑假期余额、历史请假、部门人力情况和制度约束 |
 | 项目人员智能推荐 | project、employee_skill、employee、attendance、leave、payroll | 需要同时考虑技能匹配、可用性、请假安排、当前项目占用和人力成本 |
 | 项目资源冲突检测 | project、timesheet、employee_skill、leave、attendance | 需要识别人员被多个项目占用、技能短缺、工时异常和假期冲突 |
-| HR 合规问答 + 实际操作建议 | knowledge_base、employee、leave、attendance、payroll | 既要解释制度，又要结合真实员工数据给建议，应保留证据链和复核步骤 |
+|合规问答 + 实际操作建议 | knowledge_base、employee、leave、attendance、payroll | 既要解释制度，又要结合真实员工数据给建议，应保留证据链和复核步骤 |
 | 部门人力风险诊断 | employee、attendance、leave、payroll、project、analytics | 需要综合薪资、考勤、请假、项目负载等多维信号，适合多角色分析 |
 | 关键人力成本预测 | payroll、project、employee、attendance、leave | 涉及成本估算和资源规划，结论会影响管理决策，需多视角校验 |
 
@@ -121,7 +121,7 @@
 - 考勤异常分析
 - 请假趋势分析
 - 部门薪资分布分析
-- HR 月报生成
+- 月报生成
 
 ### 第二阶段：引入 Coordinator + 专业 Agent
 
