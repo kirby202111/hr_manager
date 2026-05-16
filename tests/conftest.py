@@ -35,6 +35,7 @@ _REPO_MODULES = [
     "app.repositories.department",
     "app.repositories.attendance",
     "app.repositories.leave",
+    "app.repositories.manufacturing",
     "app.repositories.payroll",
     "app.repositories.project",
     "app.repositories.employee_skill",
@@ -88,6 +89,7 @@ def client():
         employee,
         employee_skill,
         leave,
+        manufacturing,
         payroll,
         project,
         skill_catalog,
@@ -99,6 +101,7 @@ def client():
     app.include_router(department.router)
     app.include_router(attendance.router)
     app.include_router(leave.router)
+    app.include_router(manufacturing.router)
     app.include_router(payroll.router)
     app.include_router(employee_skill.router)
     app.include_router(skill_catalog.router)
