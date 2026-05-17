@@ -83,23 +83,7 @@ Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资
 └─ main.py             # FastAPI 应用入口
 ```
 
-## 后端接口概览
 
-从入口文件和路由组织来看，当前后端已经覆盖这些主要接口域：
-
-- `worker`
-- `org_unit`
-- `attendance`
-- `leave`
-- `payroll`
-- `worker_skill`
-- `skill_definition`
-- `project`
-- `shopfloor`
-- `agent_memory`
-- `agent`
-
-另外，仓库里还能看到 `credential`、`safety_compliance`、`shift_staffing`、`shopfloor_structure`、`shopfloor_worker_profile`、`operational_risk`、`work_order` 等更细分的领域模块，它们共同构成生产现场运营能力。
 
 ## 快速开始
 
