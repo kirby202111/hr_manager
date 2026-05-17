@@ -81,7 +81,6 @@ alembic upgrade head
 验证：
 
 ```bash
-pytest
 ruff check .
 ```
 
