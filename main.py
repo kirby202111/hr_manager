@@ -8,16 +8,14 @@ from app.agent.router import router as agent_router
 from app.errors import AppError, app_error_handler
 from app.models import *  # noqa: F403 — register all ORM tables
 from app.routers import (
-    agent_memory,
     attendance,
-    org_unit,
+    capability,
+    collaboration,
+    organization,
+    qualification,
     shopfloor,
-    leave,
-    payroll,
-    project,
-    skill_definition,
-    worker,
-    worker_skill,
+    staffing,
+    workforce,
 )
 
 
@@ -39,16 +37,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(worker.router)
-app.include_router(org_unit.router)
-app.include_router(attendance.router)
-app.include_router(leave.router)
+app.include_router(organization.router)
+app.include_router(workforce.router)
+app.include_router(capability.router)
+app.include_router(qualification.router)
 app.include_router(shopfloor.router)
-app.include_router(payroll.router)
-app.include_router(worker_skill.router)
-app.include_router(skill_definition.router)
-app.include_router(project.router)
-app.include_router(agent_memory.router)
+app.include_router(staffing.router)
+app.include_router(attendance.router)
+app.include_router(collaboration.router)
 app.include_router(agent_router)
 
 
