@@ -1,6 +1,6 @@
 from app.agent.protocol import AgentTool, Skill, _safe
-from app.schemas.employee_skill import EmployeeSkillCreate, EmployeeSkillUpdate
-from app.services import employee_skill as skill_service
+from app.schemas.worker_skill import EmployeeSkillCreate, EmployeeSkillUpdate
+from app.services import worker_skill as skill_service
 
 
 def _create_skill(

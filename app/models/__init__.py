@@ -1,16 +1,18 @@
+"""模型层统一导出入口。"""
+
 from app.models.agent_memory import AgentMemory, ConversationMessage, MemoryReminder
 from app.models.attendance import Attendance
-from app.models.department import Department
-from app.models.employee import Employee
-from app.models.employee_skill import EmployeeSkill
+from app.models.org_unit import Department, OrgUnit
+from app.models.worker import Worker
+from app.models.worker_skill import WorkerSkill
 from app.models.leave import Leave
-from app.models.manufacturing import (
+from app.models.shopfloor import (
     Certification,
-    EmployeeCertification,
-    EmployeeProductionProfile,
-    EmployeeSafetyRecord,
-    EmployeeShiftAssignment,
-    EmployeeTeamAssignment,
+    WorkerCertification,
+    WorkerProductionProfile,
+    WorkerSafetyRecord,
+    WorkerShiftAssignment,
+    WorkerTeamAssignment,
     EquipmentAuthorization,
     ProductionLine,
     ProductionOrder,
@@ -28,12 +30,14 @@ from app.models.manufacturing import (
 )
 from app.models.payroll import Payroll
 from app.models.project import Project, ProjectMember, ProjectSkillRequirement, ProjectTimesheet
-from app.models.skill_catalog import SkillCatalog
+from app.models.skill_definition import SkillCatalog, SkillDefinition
 
 __all__ = [
+    "OrgUnit",
     "Department",
-    "Employee",
-    "EmployeeSkill",
+    "Worker",
+    "WorkerSkill",
+    "SkillDefinition",
     "SkillCatalog",
     "Attendance",
     "Leave",
@@ -43,18 +47,18 @@ __all__ = [
     "WorkstationRequiredSkill",
     "WorkstationRequiredCertification",
     "WorkstationEquipmentRequirement",
-    "EmployeeTeamAssignment",
-    "EmployeeProductionProfile",
+    "WorkerTeamAssignment",
+    "WorkerProductionProfile",
     "Certification",
-    "EmployeeCertification",
+    "WorkerCertification",
     "EquipmentAuthorization",
     "SafetyTraining",
-    "EmployeeSafetyRecord",
+    "WorkerSafetyRecord",
     "ProductionOrder",
     "ProductionOrderOperation",
     "ShiftDefinition",
     "ProductionShiftPlan",
-    "EmployeeShiftAssignment",
+    "WorkerShiftAssignment",
     "ProductionRiskSignal",
     "ProductionRiskReview",
     "Payroll",

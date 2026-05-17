@@ -1,3 +1,5 @@
+"""项目协同模型。"""
+
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Float, Index, Integer, String, UniqueConstraint
@@ -8,6 +10,8 @@ from app.models.base import _to_dict
 
 
 class Project(Base):
+    """项目主档，用于承载改善项目或专项任务。"""
+
     __tablename__ = "projects"
     __table_args__ = (Index("ix_projects_status", "status"),)
 
@@ -23,6 +27,8 @@ class Project(Base):
 
 
 class ProjectSkillRequirement(Base):
+    """项目技能需求，描述项目所需技能等级、人天和人数。"""
+
     __tablename__ = "project_skill_requirements"
     __table_args__ = (
         UniqueConstraint("project_id", "skill_id", name="uq_project_requirements_project_skill"),
@@ -42,16 +48,18 @@ class ProjectSkillRequirement(Base):
 
 
 class ProjectMember(Base):
+    """项目成员表，记录员工在项目中的角色与加入时间。"""
+
     __tablename__ = "project_members"
     __table_args__ = (
-        UniqueConstraint("project_id", "employee_id", name="uq_project_members_project_employee"),
+        UniqueConstraint("project_id", "worker_id", name="uq_project_members_project_worker"),
         Index("ix_project_members_project_id", "project_id"),
-        Index("ix_project_members_employee_id", "employee_id"),
+        Index("ix_project_members_worker_id", "worker_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[int] = mapped_column(Integer, nullable=False)
     role: Mapped[str] = mapped_column(String(100), nullable=False)
     assigned_date: Mapped[date] = mapped_column(Date, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
@@ -60,16 +68,18 @@ class ProjectMember(Base):
 
 
 class ProjectTimesheet(Base):
+    """项目工时记录，按日期登记成员在项目需求上的投入。"""
+
     __tablename__ = "project_timesheets"
     __table_args__ = (
-        Index("ix_project_timesheets_project_employee_date", "project_id", "employee_id", "date"),
+        Index("ix_project_timesheets_project_worker_date", "project_id", "worker_id", "date"),
         Index("ix_project_timesheets_requirement_id", "requirement_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     project_id: Mapped[int] = mapped_column(Integer, nullable=False)
     requirement_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[int] = mapped_column(Integer, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     hours: Mapped[float] = mapped_column(Float, nullable=False)
     description: Mapped[str | None] = mapped_column(String, nullable=True)

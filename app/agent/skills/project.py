@@ -6,9 +6,9 @@ from app.schemas.project import (
     ProjectTimesheetCreate,
     ProjectUpdate,
 )
-from app.schemas.skill_catalog import SkillCatalogCreate
+from app.schemas.skill_definition import SkillCatalogCreate
 from app.services import project as project_service
-from app.services import skill_catalog as catalog_service
+from app.services import skill_definition as catalog_service
 
 skill = Skill(
     name="project_management",

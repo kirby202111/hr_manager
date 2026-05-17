@@ -10,14 +10,14 @@ from app.models import *  # noqa: F403 — register all ORM tables
 from app.routers import (
     agent_memory,
     attendance,
-    department,
-    employee,
-    employee_skill,
+    org_unit,
+    shopfloor,
     leave,
-    manufacturing,
     payroll,
     project,
-    skill_catalog,
+    skill_definition,
+    worker,
+    worker_skill,
 )
 
 
@@ -39,14 +39,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(employee.router)
-app.include_router(department.router)
+app.include_router(worker.router)
+app.include_router(org_unit.router)
 app.include_router(attendance.router)
 app.include_router(leave.router)
-app.include_router(manufacturing.router)
+app.include_router(shopfloor.router)
 app.include_router(payroll.router)
-app.include_router(employee_skill.router)
-app.include_router(skill_catalog.router)
+app.include_router(worker_skill.router)
+app.include_router(skill_definition.router)
 app.include_router(project.router)
 app.include_router(agent_memory.router)
 app.include_router(agent_router)

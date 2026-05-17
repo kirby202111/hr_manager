@@ -15,11 +15,11 @@ from app.models.agent_memory import (
     MemoryReminder,
 )
 from app.models.attendance import Attendance
-from app.models.department import Department
+from app.models.org_unit import Department
 
 # ── Model imports ──────────────────────────────────────────────
-from app.models.employee import Employee
-from app.models.employee_skill import EmployeeSkill
+from app.models.worker import Employee
+from app.models.worker_skill import EmployeeSkill
 from app.models.leave import Leave
 from app.models.payroll import Payroll
 from app.models.project import (
@@ -28,7 +28,7 @@ from app.models.project import (
     ProjectSkillRequirement,
     ProjectTimesheet,
 )
-from app.models.skill_catalog import SkillCatalog
+from app.models.skill_definition import SkillCatalog
 
 # ── Helpers ────────────────────────────────────────────────────
 

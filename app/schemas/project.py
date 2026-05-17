@@ -76,7 +76,7 @@ class ProjectSkillRequirementListResponse(BaseModel):
 
 
 class ProjectMemberCreate(BaseModel):
-    employee_id: int
+    worker_id: int
     role: str
     assigned_date: date_type
 
@@ -89,8 +89,8 @@ class ProjectMemberUpdate(BaseModel):
 class ProjectMemberResponse(BaseModel):
     id: int
     project_id: int
-    employee_id: int
-    employee_name: str | None = None
+    worker_id: int
+    worker_name: str | None = None
     role: str
     assigned_date: date_type
     created_at: datetime
@@ -106,7 +106,7 @@ class ProjectMemberListResponse(BaseModel):
 
 class ProjectTimesheetCreate(BaseModel):
     requirement_id: int
-    employee_id: int
+    worker_id: int
     date: date_type
     hours: float
     description: str | None = None
@@ -114,7 +114,7 @@ class ProjectTimesheetCreate(BaseModel):
 
 class ProjectTimesheetUpdate(BaseModel):
     requirement_id: int | None = None
-    employee_id: int | None = None
+    worker_id: int | None = None
     date: date_type | None = None
     hours: float | None = None
     description: str | None = None
@@ -124,8 +124,8 @@ class ProjectTimesheetResponse(BaseModel):
     id: int
     project_id: int
     requirement_id: int
-    employee_id: int
-    employee_name: str | None = None
+    worker_id: int
+    worker_name: str | None = None
     skill_name: str | None = None
     date: date_type
     hours: float
@@ -150,8 +150,8 @@ class RequirementProgress(BaseModel):
 
 
 class MemberWorkload(BaseModel):
-    employee_id: int
-    employee_name: str | None = None
+    worker_id: int
+    worker_name: str | None = None
     total_person_days: float
 
 

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class PayrollCreate(BaseModel):
-    employee_id: int
+    worker_id: int
     month: str
     base_salary: float
     bonuses: float = 0
@@ -20,8 +20,8 @@ class PayrollUpdate(BaseModel):
 
 class PayrollResponse(BaseModel):
     id: int
-    employee_id: int
-    employee_name: str
+    worker_id: int
+    worker_name: str
     department_name: str | None = None
     month: str
     base_salary: float

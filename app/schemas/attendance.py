@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class AttendanceCheckIn(BaseModel):
-    employee_id: int
+    worker_id: int
     date: date
     check_in: time
 
@@ -15,8 +15,8 @@ class AttendanceCheckOut(BaseModel):
 
 class AttendanceResponse(BaseModel):
     id: int
-    employee_id: int
-    employee_name: str
+    worker_id: int
+    worker_name: str
     date: date
     check_in: time
     check_out: time | None = None
@@ -30,8 +30,8 @@ class AttendanceListResponse(BaseModel):
 
 
 class AttendanceStats(BaseModel):
-    employee_id: int
-    employee_name: str
+    worker_id: int
+    worker_name: str
     period_start: date
     period_end: date
     total_work_days: int = 0

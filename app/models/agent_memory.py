@@ -1,3 +1,5 @@
+"""Agent 记忆与会话消息模型。"""
+
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String
@@ -8,6 +10,8 @@ from app.models.base import _to_dict
 
 
 class AgentMemory(Base):
+    """长期记忆实体，保存偏好、事实和可过期上下文。"""
+
     __tablename__ = "agent_memories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -28,6 +32,8 @@ class AgentMemory(Base):
 
 
 class MemoryReminder(Base):
+    """记忆提醒实体，用于对指定记忆进行定时触发。"""
+
     __tablename__ = "memory_reminders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -43,6 +49,8 @@ class MemoryReminder(Base):
 
 
 class ConversationMessage(Base):
+    """会话消息审计实体，保存用户、助手和工具调用消息。"""
+
     __tablename__ = "conversation_messages"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -56,6 +64,7 @@ class ConversationMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
     def to_dict(self) -> dict:
+        """默认用户标签不回传给前端，减少冗余字段。"""
         data = _to_dict(self)
         if self.user_tag == "default":
             data.pop("user_tag", None)

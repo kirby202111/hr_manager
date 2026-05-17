@@ -31,15 +31,15 @@ _TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_TEST_E
 
 # Modules that do `from app.database import SessionLocal` — each holds its own ref
 _REPO_MODULES = [
-    "app.repositories.employee",
-    "app.repositories.department",
+    "app.repositories.worker",
+    "app.repositories.org_unit",
     "app.repositories.attendance",
     "app.repositories.leave",
-    "app.repositories.manufacturing",
+    "app.repositories.shopfloor",
     "app.repositories.payroll",
     "app.repositories.project",
-    "app.repositories.employee_skill",
-    "app.repositories.skill_catalog",
+    "app.repositories.worker_skill",
+    "app.repositories.skill_definition",
     "app.repositories.agent_memory",
 ]
 
@@ -85,26 +85,26 @@ def client():
     from app.routers import (
         agent_memory,
         attendance,
-        department,
-        employee,
-        employee_skill,
+        org_unit,
+        shopfloor,
         leave,
-        manufacturing,
         payroll,
         project,
-        skill_catalog,
+        skill_definition,
+        worker,
+        worker_skill,
     )
 
     app = FastAPI()
     app.add_exception_handler(AppError, app_error_handler)
-    app.include_router(employee.router)
-    app.include_router(department.router)
+    app.include_router(worker.router)
+    app.include_router(org_unit.router)
     app.include_router(attendance.router)
     app.include_router(leave.router)
-    app.include_router(manufacturing.router)
+    app.include_router(shopfloor.router)
     app.include_router(payroll.router)
-    app.include_router(employee_skill.router)
-    app.include_router(skill_catalog.router)
+    app.include_router(worker_skill.router)
+    app.include_router(skill_definition.router)
     app.include_router(project.router)
     app.include_router(agent_memory.router)
 
@@ -122,7 +122,7 @@ async def _async_iter(items):
 
 @pytest.fixture()
 def sample_department():
-    from app.repositories import department as dept_repo
+    from app.repositories import org_unit as dept_repo
 
     dept = dept_repo.create_department(
         {
@@ -136,7 +136,7 @@ def sample_department():
 
 @pytest.fixture()
 def sample_employee(sample_department):
-    from app.repositories import employee as emp_repo
+    from app.repositories import worker as emp_repo
 
     emp = emp_repo.create_employee(
         {
@@ -203,7 +203,7 @@ def sample_payroll(sample_employee):
 
 @pytest.fixture()
 def sample_skill_catalog():
-    from app.repositories import skill_catalog as catalog_repo
+    from app.repositories import skill_definition as catalog_repo
 
     skill = catalog_repo.create_skill(
         {
@@ -218,7 +218,7 @@ def sample_skill_catalog():
 
 @pytest.fixture()
 def sample_employee_skill(sample_employee, sample_skill_catalog):
-    from app.repositories import employee_skill as skill_repo
+    from app.repositories import worker_skill as skill_repo
 
     skill = skill_repo.create_skill(
         {

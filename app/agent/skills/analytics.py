@@ -4,10 +4,10 @@ import calendar
 from datetime import date as date_type
 
 from app.agent.protocol import AgentTool, Skill
-from app.repositories import department as department_repo
-from app.repositories import employee as employee_repo
+from app.repositories import org_unit as department_repo
+from app.repositories import worker as employee_repo
 from app.services import attendance as attendance_service
-from app.services import department as department_service
+from app.services import org_unit as department_service
 from app.services import leave as leave_service
 
 

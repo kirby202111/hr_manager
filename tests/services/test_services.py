@@ -1,4 +1,4 @@
-"""Comprehensive pytest unit tests for all service modules."""
+﻿"""Comprehensive pytest unit tests for all service modules."""
 
 from datetime import UTC, date, datetime, time, timedelta
 from unittest.mock import MagicMock, patch
@@ -8,9 +8,9 @@ from fastapi import HTTPException
 
 from app.schemas.agent_memory import MemoryCreate, MemoryUpdate, ReminderCreate
 from app.schemas.attendance import AttendanceCheckIn, AttendanceCheckOut
-from app.schemas.department import DepartmentCreate, DepartmentUpdate
-from app.schemas.employee import EmployeeCreate, EmployeeUpdate
-from app.schemas.employee_skill import EmployeeSkillCreate, EmployeeSkillUpdate
+from app.schemas.org_unit import DepartmentCreate, DepartmentUpdate
+from app.schemas.worker import WorkerCreate, WorkerUpdate
+from app.schemas.worker_skill import EmployeeSkillCreate, EmployeeSkillUpdate
 from app.schemas.leave import LeaveApproval, LeaveCreate, LeaveUpdate
 from app.schemas.payroll import PayrollCreate, PayrollUpdate
 from app.schemas.project import (
@@ -23,104 +23,104 @@ from app.schemas.project import (
     ProjectTimesheetUpdate,
     ProjectUpdate,
 )
-from app.schemas.skill_catalog import SkillCatalogCreate, SkillCatalogUpdate
+from app.schemas.skill_definition import SkillCatalogCreate, SkillCatalogUpdate
 from app.services import (
     agent_memory,
     attendance,
-    department,
-    employee,
-    employee_skill,
     knowledge_base,
     leave,
+    org_unit as department,
     payroll,
     project,
-    skill_catalog,
+    skill_definition as skill_catalog,
+    worker as employee,
+    worker_skill as employee_skill,
 )
 
-# ═══════════════════════════════════════════════════════════════════
-# 1. Employee Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+# 1. Worker Service
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
-class TestEmployeeService:
-    def test_list_employees_empty(self):
-        result = employee.list_employees()
+class TestWorkerService:
+    def test_list_workers_empty(self):
+        result = employee.list_workers()
         assert result.total == 0
         assert result.employees == []
 
-    def test_list_employees_with_data(self, sample_employee):
-        result = employee.list_employees()
+    def test_list_workers_with_data(self, sample_employee):
+        result = employee.list_workers()
         assert result.total == 1
-        assert result.employees[0].name == "张三"
-        assert result.employees[0].department_name == "工程部"
+        assert result.employees[0].name == "寮犱笁"
+        assert result.employees[0].department_name == "宸ョ▼閮?
 
-    def test_get_employee(self, sample_employee):
-        result = employee.get_employee(sample_employee["id"])
+    def test_get_worker(self, sample_employee):
+        result = employee.get_worker(sample_employee["id"])
         assert result.id == sample_employee["id"]
-        assert result.name == "张三"
-        assert result.department_name == "工程部"
+        assert result.name == "寮犱笁"
+        assert result.department_name == "宸ョ▼閮?
 
     def test_get_employee_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
-            employee.get_employee(9999)
+            employee.get_worker(9999)
         assert exc_info.value.status_code == 404
         assert "9999 not found" in exc_info.value.detail
 
-    def test_create_employee(self, sample_department):
-        emp_in = EmployeeCreate(name="李四", department_id=sample_department["id"], salary=12000.0)
-        result = employee.create_employee(emp_in)
-        assert result.name == "李四"
-        assert result.department_name == "工程部"
+    def test_create_worker(self, sample_department):
+        emp_in = WorkerCreate(name="鏉庡洓", department_id=sample_department["id"], salary=12000.0)
+        result = employee.create_worker(emp_in)
+        assert result.name == "鏉庡洓"
+        assert result.department_name == "宸ョ▼閮?
         assert result.salary == 12000.0
 
-    def test_create_employee_no_department(self):
-        emp_in = EmployeeCreate(name="王五", salary=10000.0)
-        result = employee.create_employee(emp_in)
-        assert result.name == "王五"
+    def test_create_worker_no_department(self):
+        emp_in = WorkerCreate(name="鐜嬩簲", salary=10000.0)
+        result = employee.create_worker(emp_in)
+        assert result.name == "鐜嬩簲"
         assert result.department_id is None
         assert result.department_name is None
 
-    def test_create_employee_invalid_department(self):
-        emp_in = EmployeeCreate(name="赵六", department_id=9999, salary=10000.0)
+    def test_create_worker_invalid_department(self):
+        emp_in = WorkerCreate(name="璧靛叚", department_id=9999, salary=10000.0)
         with pytest.raises(HTTPException) as exc_info:
-            employee.create_employee(emp_in)
+            employee.create_worker(emp_in)
         assert exc_info.value.status_code == 400
         assert "9999 not found" in exc_info.value.detail
 
-    def test_update_employee(self, sample_employee, sample_department):
-        emp_in = EmployeeUpdate(name="张三丰")
-        result = employee.update_employee(sample_employee["id"], emp_in)
-        assert result.name == "张三丰"
+    def test_update_worker(self, sample_employee, sample_department):
+        emp_in = WorkerUpdate(name="寮犱笁涓?)
+        result = employee.update_worker(sample_employee["id"], emp_in)
+        assert result.name == "寮犱笁涓?
 
-    def test_update_employee_not_found(self):
-        emp_in = EmployeeUpdate(name="Nobody")
+    def test_update_worker_not_found(self):
+        emp_in = WorkerUpdate(name="Nobody")
         with pytest.raises(HTTPException) as exc_info:
-            employee.update_employee(9999, emp_in)
+            employee.update_worker(9999, emp_in)
         assert exc_info.value.status_code == 404
 
-    def test_update_employee_invalid_department(self, sample_employee):
-        emp_in = EmployeeUpdate(department_id=9999)
+    def test_update_worker_invalid_department(self, sample_employee):
+        emp_in = WorkerUpdate(department_id=9999)
         with pytest.raises(HTTPException) as exc_info:
-            employee.update_employee(sample_employee["id"], emp_in)
+            employee.update_worker(sample_employee["id"], emp_in)
         assert exc_info.value.status_code == 400
         assert "9999 not found" in exc_info.value.detail
 
-    def test_delete_employee(self, sample_employee):
-        result = employee.delete_employee(sample_employee["id"])
+    def test_delete_worker(self, sample_employee):
+        result = employee.delete_worker(sample_employee["id"])
         assert "deleted" in result["message"]
         with pytest.raises(HTTPException) as exc_info:
-            employee.get_employee(sample_employee["id"])
+            employee.get_worker(sample_employee["id"])
         assert exc_info.value.status_code == 404
 
-    def test_delete_employee_not_found(self):
+    def test_delete_worker_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
-            employee.delete_employee(9999)
+            employee.delete_worker(9999)
         assert exc_info.value.status_code == 404
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 2. Department Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestDepartmentService:
@@ -136,7 +136,7 @@ class TestDepartmentService:
 
     def test_get_department(self, sample_department):
         result = department.get_department(sample_department["id"])
-        assert result.name == "工程部"
+        assert result.name == "宸ョ▼閮?
         assert result.employee_count == 0
 
     def test_get_department_not_found(self):
@@ -146,44 +146,44 @@ class TestDepartmentService:
         assert "9999 not found" in exc_info.value.detail
 
     def test_create_department(self):
-        dept_in = DepartmentCreate(name="市场部", description="市场营销", manager="李经理")
+        dept_in = DepartmentCreate(name="甯傚満閮?, description="甯傚満钀ラ攢", manager="鏉庣粡鐞?)
         result = department.create_department(dept_in)
-        assert result.name == "市场部"
+        assert result.name == "甯傚満閮?
         assert result.employee_count == 0
 
     def test_create_department_duplicate_name(self, sample_department):
-        dept_in = DepartmentCreate(name="工程部")
+        dept_in = DepartmentCreate(name="宸ョ▼閮?)
         with pytest.raises(HTTPException) as exc_info:
             department.create_department(dept_in)
         assert exc_info.value.status_code == 400
         assert "already exists" in exc_info.value.detail
 
     def test_update_department(self, sample_department):
-        dept_in = DepartmentUpdate(description="研发部门V2")
+        dept_in = DepartmentUpdate(description="鐮斿彂閮ㄩ棬V2")
         result = department.update_department(sample_department["id"], dept_in)
-        assert result.description == "研发部门V2"
+        assert result.description == "鐮斿彂閮ㄩ棬V2"
 
     def test_update_department_not_found(self):
-        dept_in = DepartmentUpdate(name="不存在")
+        dept_in = DepartmentUpdate(name="涓嶅瓨鍦?)
         with pytest.raises(HTTPException) as exc_info:
             department.update_department(9999, dept_in)
         assert exc_info.value.status_code == 404
 
     def test_update_department_duplicate_name(self, sample_department):
         # Create another department first
-        dept_in = DepartmentCreate(name="市场部")
+        dept_in = DepartmentCreate(name="甯傚満閮?)
         department.create_department(dept_in)
-        # Try to rename 工程部 to 市场部
-        dup_in = DepartmentUpdate(name="市场部")
+        # Try to rename 宸ョ▼閮?to 甯傚満閮?
+        dup_in = DepartmentUpdate(name="甯傚満閮?)
         with pytest.raises(HTTPException) as exc_info:
             department.update_department(sample_department["id"], dup_in)
         assert exc_info.value.status_code == 400
         assert "already exists" in exc_info.value.detail
 
     def test_update_department_same_name_ok(self, sample_department):
-        dept_in = DepartmentUpdate(name="工程部", description="更新描述")
+        dept_in = DepartmentUpdate(name="宸ョ▼閮?, description="鏇存柊鎻忚堪")
         result = department.update_department(sample_department["id"], dept_in)
-        assert result.description == "更新描述"
+        assert result.description == "鏇存柊鎻忚堪"
 
     def test_delete_department(self, sample_department):
         result = department.delete_department(sample_department["id"])
@@ -200,20 +200,20 @@ class TestDepartmentService:
         assert exc_info.value.status_code == 400
         assert "Cannot delete" in exc_info.value.detail
 
-    def test_get_department_employees(self, sample_department, sample_employee):
-        result = department.get_department_employees(sample_department["id"])
+    def test_get_department_workers(self, sample_department, sample_employee):
+        result = department.get_department_workers(sample_department["id"])
         assert len(result) == 1
-        assert result[0].name == "张三"
+        assert result[0].name == "寮犱笁"
 
-    def test_get_department_employees_not_found(self):
+    def test_get_department_workers_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
-            department.get_department_employees(9999)
+            department.get_department_workers(9999)
         assert exc_info.value.status_code == 404
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 3. Attendance Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestAttendanceService:
@@ -226,7 +226,7 @@ class TestAttendanceService:
         result = attendance.check_in(data)
         assert result.employee_id == sample_employee["id"]
         assert result.status == "normal"
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
         assert result.work_hours is None
 
     def test_check_in_late(self, sample_employee):
@@ -309,7 +309,7 @@ class TestAttendanceService:
     def test_get_attendance(self, sample_attendance):
         result = attendance.get_attendance(sample_attendance["id"])
         assert result.id == sample_attendance["id"]
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
 
     def test_get_attendance_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -362,9 +362,9 @@ class TestAttendanceService:
         assert hours == 1.0
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 4. Leave Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestLeaveService:
@@ -374,12 +374,12 @@ class TestLeaveService:
             leave_type="annual",
             start_date=date(2026, 6, 1),
             end_date=date(2026, 6, 3),
-            reason="休假",
+            reason="浼戝亣",
         )
         result = leave.create_leave(data)
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
         assert result.leave_type == "annual"
-        assert result.leave_type_name == "年假"
+        assert result.leave_type_name == "骞村亣"
         assert result.days == 3
         assert result.status == "pending"
 
@@ -428,7 +428,7 @@ class TestLeaveService:
         )
         leave1 = leave.create_leave(data1)
         # Approve it
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(leave1.id, approval)
         # Try to create overlapping leave
         data2 = LeaveCreate(
@@ -451,7 +451,7 @@ class TestLeaveService:
             end_date=date(2026, 6, 8),
         )
         leave1 = leave.create_leave(data1)
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(leave1.id, approval)
         # Now try 3 more annual (only 2 remaining)
         data2 = LeaveCreate(
@@ -490,7 +490,7 @@ class TestLeaveService:
         assert exc_info.value.status_code == 404
 
     def test_update_leave_not_pending(self, sample_leave):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(sample_leave["id"], approval)
         data = LeaveUpdate(reason="update after approval")
         with pytest.raises(HTTPException) as exc_info:
@@ -506,19 +506,19 @@ class TestLeaveService:
         assert "end_date must be >= start_date" in exc_info.value.detail
 
     def test_approve_leave(self, sample_leave):
-        approval = LeaveApproval(approver="张经理", comment="同意")
+        approval = LeaveApproval(approver="寮犵粡鐞?, comment="鍚屾剰")
         result = leave.approve_leave(sample_leave["id"], approval)
         assert result.status == "approved"
-        assert result.approver == "张经理"
+        assert result.approver == "寮犵粡鐞?
 
     def test_approve_leave_not_found(self):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         with pytest.raises(HTTPException) as exc_info:
             leave.approve_leave(9999, approval)
         assert exc_info.value.status_code == 404
 
     def test_approve_leave_not_pending(self, sample_leave):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(sample_leave["id"], approval)
         with pytest.raises(HTTPException) as exc_info:
             leave.approve_leave(sample_leave["id"], approval)
@@ -526,18 +526,18 @@ class TestLeaveService:
         assert "Only pending" in exc_info.value.detail
 
     def test_reject_leave(self, sample_leave):
-        approval = LeaveApproval(approver="张经理")
+        approval = LeaveApproval(approver="寮犵粡鐞?)
         result = leave.reject_leave(sample_leave["id"], approval)
         assert result.status == "rejected"
 
     def test_reject_leave_not_found(self):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         with pytest.raises(HTTPException) as exc_info:
             leave.reject_leave(9999, approval)
         assert exc_info.value.status_code == 404
 
     def test_reject_leave_not_pending(self, sample_leave):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(sample_leave["id"], approval)
         with pytest.raises(HTTPException) as exc_info:
             leave.reject_leave(sample_leave["id"], approval)
@@ -553,7 +553,7 @@ class TestLeaveService:
         assert exc_info.value.status_code == 404
 
     def test_cancel_leave_not_pending(self, sample_leave):
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(sample_leave["id"], approval)
         with pytest.raises(HTTPException) as exc_info:
             leave.cancel_leave(sample_leave["id"])
@@ -574,7 +574,7 @@ class TestLeaveService:
             end_date=date(2026, 6, 3),
         )
         leave1 = leave.create_leave(data)
-        approval = LeaveApproval(approver="经理")
+        approval = LeaveApproval(approver="缁忕悊")
         leave.approve_leave(leave1.id, approval)
         result = leave.get_leave_balance(sample_employee["id"])
         assert result.annual_used == 3
@@ -598,12 +598,12 @@ class TestLeaveService:
         )
         result = leave.create_leave(data)
         assert result.leave_type == "other"
-        assert result.leave_type_name == "其他"
+        assert result.leave_type_name == "鍏朵粬"
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 5. Payroll Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestPayrollService:
@@ -616,7 +616,7 @@ class TestPayrollService:
             deductions=500.0,
         )
         result = payroll.create_payroll(data)
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
         assert result.net_salary == 15500.0  # 15000 + 1000 - 500
         assert result.status == "draft"
 
@@ -749,9 +749,9 @@ class TestPayrollService:
         assert exc_info.value.status_code == 400
 
 
-# ═══════════════════════════════════════════════════════════════════
-# 6. Employee Skill Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
+# 6. Worker Skill Service
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestEmployeeSkillService:
@@ -762,8 +762,8 @@ class TestEmployeeSkillService:
     def test_list_skills(self, sample_employee_skill):
         result = employee_skill.list_skills()
         assert result.total == 1
-        assert result.skills[0].employee_name == "张三"
-        assert result.skills[0].skill_category == "编程"
+        assert result.skills[0].employee_name == "寮犱笁"
+        assert result.skills[0].skill_category == "缂栫▼"
 
     def test_list_skills_by_employee(self, sample_employee, sample_employee_skill):
         result = employee_skill.list_skills_by_employee(sample_employee["id"])
@@ -774,8 +774,8 @@ class TestEmployeeSkillService:
             employee_skill.list_skills_by_employee(9999)
         assert exc_info.value.status_code == 404
 
-    def test_list_employees_by_skill(self, sample_employee_skill):
-        result = employee_skill.list_employees_by_skill("Python")
+    def test_list_workers_by_skill(self, sample_employee_skill):
+        result = employee_skill.list_workers_by_skill("Python")
         assert result.total == 1
 
     def test_get_skill(self, sample_employee_skill):
@@ -797,7 +797,7 @@ class TestEmployeeSkillService:
         )
         result = employee_skill.create_skill(skill_in)
         assert result.proficiency_level == "intermediate"
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
 
     def test_create_skill_employee_not_found(self, sample_skill_catalog):
         skill_in = EmployeeSkillCreate(
@@ -809,7 +809,7 @@ class TestEmployeeSkillService:
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.create_skill(skill_in)
         assert exc_info.value.status_code == 400
-        assert "不存在" in exc_info.value.detail
+        assert "涓嶅瓨鍦? in exc_info.value.detail
 
     def test_create_skill_invalid_proficiency(self, sample_employee):
         skill_in = EmployeeSkillCreate(
@@ -820,7 +820,7 @@ class TestEmployeeSkillService:
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.create_skill(skill_in)
         assert exc_info.value.status_code == 400
-        assert "无效的熟练程度" in exc_info.value.detail
+        assert "鏃犳晥鐨勭啛缁冪▼搴? in exc_info.value.detail
 
     def test_create_skill_invalid_catalog(self, sample_employee):
         skill_in = EmployeeSkillCreate(
@@ -832,7 +832,7 @@ class TestEmployeeSkillService:
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.create_skill(skill_in)
         assert exc_info.value.status_code == 400
-        assert "技能目录" in exc_info.value.detail
+        assert "鎶€鑳界洰褰? in exc_info.value.detail
 
     def test_update_skill(self, sample_employee_skill):
         skill_in = EmployeeSkillUpdate(proficiency_level="expert", years_of_experience=8.0)
@@ -844,25 +844,25 @@ class TestEmployeeSkillService:
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.update_skill(9999, skill_in)
         assert exc_info.value.status_code == 404
-        assert "技能记录" in exc_info.value.detail
+        assert "鎶€鑳借褰? in exc_info.value.detail
 
     def test_update_skill_invalid_proficiency(self, sample_employee_skill):
         skill_in = EmployeeSkillUpdate(proficiency_level="invalid")
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.update_skill(sample_employee_skill["id"], skill_in)
         assert exc_info.value.status_code == 400
-        assert "无效的熟练程度" in exc_info.value.detail
+        assert "鏃犳晥鐨勭啛缁冪▼搴? in exc_info.value.detail
 
     def test_update_skill_invalid_catalog(self, sample_employee_skill):
         skill_in = EmployeeSkillUpdate(skill_id=9999)
         with pytest.raises(HTTPException) as exc_info:
             employee_skill.update_skill(sample_employee_skill["id"], skill_in)
         assert exc_info.value.status_code == 400
-        assert "技能目录" in exc_info.value.detail
+        assert "鎶€鑳界洰褰? in exc_info.value.detail
 
     def test_delete_skill(self, sample_employee_skill):
         result = employee_skill.delete_skill(sample_employee_skill["id"])
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_skill_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -870,9 +870,9 @@ class TestEmployeeSkillService:
         assert exc_info.value.status_code == 404
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 7. Skill Catalog Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestSkillCatalogService:
@@ -887,12 +887,12 @@ class TestSkillCatalogService:
 
     def test_list_skills_filter_category(self, sample_skill_catalog):
         # Create another skill in different category
-        skill_in = SkillCatalogCreate(name="Java", category="编程", description="Java语言")
+        skill_in = SkillCatalogCreate(name="Java", category="缂栫▼", description="Java璇█")
         skill_catalog.create_skill(skill_in)
-        skill_in2 = SkillCatalogCreate(name="Excel", category="办公", description="表格工具")
+        skill_in2 = SkillCatalogCreate(name="Excel", category="鍔炲叕", description="琛ㄦ牸宸ュ叿")
         skill_catalog.create_skill(skill_in2)
 
-        result = skill_catalog.list_skills(category="办公")
+        result = skill_catalog.list_skills(category="鍔炲叕")
         assert result.total == 1
         assert result.skills[0].name == "Excel"
 
@@ -905,10 +905,10 @@ class TestSkillCatalogService:
         with pytest.raises(HTTPException) as exc_info:
             skill_catalog.get_skill(9999)
         assert exc_info.value.status_code == 404
-        assert "技能目录" in exc_info.value.detail
+        assert "鎶€鑳界洰褰? in exc_info.value.detail
 
     def test_create_skill(self):
-        skill_in = SkillCatalogCreate(name="JavaScript", category="编程", description="JS语言")
+        skill_in = SkillCatalogCreate(name="JavaScript", category="缂栫▼", description="JS璇█")
         result = skill_catalog.create_skill(skill_in)
         assert result.name == "JavaScript"
 
@@ -917,7 +917,7 @@ class TestSkillCatalogService:
         with pytest.raises(HTTPException) as exc_info:
             skill_catalog.create_skill(skill_in)
         assert exc_info.value.status_code == 400
-        assert "已存在" in exc_info.value.detail
+        assert "宸插瓨鍦? in exc_info.value.detail
 
     def test_update_skill(self, sample_skill_catalog):
         skill_in = SkillCatalogUpdate(description="Python 3.x")
@@ -925,19 +925,19 @@ class TestSkillCatalogService:
         assert result.description == "Python 3.x"
 
     def test_update_skill_not_found(self):
-        skill_in = SkillCatalogUpdate(name="不存在")
+        skill_in = SkillCatalogUpdate(name="涓嶅瓨鍦?)
         with pytest.raises(HTTPException) as exc_info:
             skill_catalog.update_skill(9999, skill_in)
         assert exc_info.value.status_code == 404
 
     def test_update_skill_duplicate_name(self, sample_skill_catalog):
-        skill_in = SkillCatalogCreate(name="Java", category="编程")
+        skill_in = SkillCatalogCreate(name="Java", category="缂栫▼")
         skill_catalog.create_skill(skill_in)
         dup_in = SkillCatalogUpdate(name="Java")
         with pytest.raises(HTTPException) as exc_info:
             skill_catalog.update_skill(sample_skill_catalog["id"], dup_in)
         assert exc_info.value.status_code == 400
-        assert "已存在" in exc_info.value.detail
+        assert "宸插瓨鍦? in exc_info.value.detail
 
     def test_update_skill_same_name_ok(self, sample_skill_catalog):
         skill_in = SkillCatalogUpdate(name="Python", description="Updated")
@@ -946,7 +946,7 @@ class TestSkillCatalogService:
 
     def test_delete_skill(self, sample_skill_catalog):
         result = skill_catalog.delete_skill(sample_skill_catalog["id"])
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_skill_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -957,12 +957,12 @@ class TestSkillCatalogService:
         with pytest.raises(HTTPException) as exc_info:
             skill_catalog.delete_skill(sample_skill_catalog["id"])
         assert exc_info.value.status_code == 400
-        assert "正在被使用" in exc_info.value.detail
+        assert "姝ｅ湪琚娇鐢? in exc_info.value.detail
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 8. Project Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestProjectService:
@@ -973,7 +973,7 @@ class TestProjectService:
     def test_list_projects(self, sample_project):
         result = project.list_projects()
         assert result.total == 1
-        assert result.projects[0].name == "HR系统V2"
+        assert result.projects[0].name == "HR绯荤粺V2"
 
     def test_list_projects_filter_status(self, sample_project):
         result = project.list_projects(status="active")
@@ -983,36 +983,36 @@ class TestProjectService:
 
     def test_get_project(self, sample_project):
         result = project.get_project(sample_project["id"])
-        assert result.name == "HR系统V2"
+        assert result.name == "HR绯荤粺V2"
 
     def test_get_project_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
             project.get_project(9999)
         assert exc_info.value.status_code == 404
-        assert "项目" in exc_info.value.detail
+        assert "椤圭洰" in exc_info.value.detail
 
     def test_create_project(self):
         proj_in = ProjectCreate(
-            name="新项目",
+            name="鏂伴」鐩?,
             status="planning",
             start_date=date(2026, 1, 1),
             end_date=date(2026, 12, 31),
         )
         result = project.create_project(proj_in)
-        assert result.name == "新项目"
+        assert result.name == "鏂伴」鐩?
         assert result.skill_requirement_count == 0
         assert result.member_count == 0
 
     def test_create_project_invalid_status(self):
-        proj_in = ProjectCreate(name="坏项目", status="invalid")
+        proj_in = ProjectCreate(name="鍧忛」鐩?, status="invalid")
         with pytest.raises(HTTPException) as exc_info:
             project.create_project(proj_in)
         assert exc_info.value.status_code == 400
-        assert "无效的项目状态" in exc_info.value.detail
+        assert "鏃犳晥鐨勯」鐩姸鎬? in exc_info.value.detail
 
     def test_create_project_end_before_start(self):
         proj_in = ProjectCreate(
-            name="坏项目",
+            name="鍧忛」鐩?,
             status="planning",
             start_date=date(2026, 12, 31),
             end_date=date(2026, 1, 1),
@@ -1020,15 +1020,15 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             project.create_project(proj_in)
         assert exc_info.value.status_code == 400
-        assert "结束日期不能早于开始日期" in exc_info.value.detail
+        assert "缁撴潫鏃ユ湡涓嶈兘鏃╀簬寮€濮嬫棩鏈? in exc_info.value.detail
 
     def test_update_project(self, sample_project):
-        proj_in = ProjectUpdate(name="HR系统V3")
+        proj_in = ProjectUpdate(name="HR绯荤粺V3")
         result = project.update_project(sample_project["id"], proj_in)
-        assert result.name == "HR系统V3"
+        assert result.name == "HR绯荤粺V3"
 
     def test_update_project_not_found(self):
-        proj_in = ProjectUpdate(name="不存在")
+        proj_in = ProjectUpdate(name="涓嶅瓨鍦?)
         with pytest.raises(HTTPException) as exc_info:
             project.update_project(9999, proj_in)
         assert exc_info.value.status_code == 404
@@ -1038,11 +1038,11 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             project.update_project(sample_project["id"], proj_in)
         assert exc_info.value.status_code == 400
-        assert "无效的项目状态" in exc_info.value.detail
+        assert "鏃犳晥鐨勯」鐩姸鎬? in exc_info.value.detail
 
     def test_delete_project(self, sample_project):
         result = project.delete_project(sample_project["id"])
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_project_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -1055,7 +1055,7 @@ class TestProjectService:
         with pytest.raises(HTTPException) as exc_info:
             project.delete_project(sample_project["id"])
         assert exc_info.value.status_code == 400
-        assert "活跃项目无法删除" in exc_info.value.detail
+        assert "娲昏穬椤圭洰鏃犳硶鍒犻櫎" in exc_info.value.detail
 
 
 class TestProjectSkillRequirement:
@@ -1100,7 +1100,7 @@ class TestProjectSkillRequirement:
         with pytest.raises(HTTPException) as exc_info:
             project.create_skill_requirement(sample_project["id"], req_in)
         assert exc_info.value.status_code == 400
-        assert "技能目录" in exc_info.value.detail
+        assert "鎶€鑳界洰褰? in exc_info.value.detail
 
     def test_create_requirement_invalid_proficiency(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1112,7 +1112,7 @@ class TestProjectSkillRequirement:
         with pytest.raises(HTTPException) as exc_info:
             project.create_skill_requirement(sample_project["id"], req_in)
         assert exc_info.value.status_code == 400
-        assert "无效的熟练程度" in exc_info.value.detail
+        assert "鏃犳晥鐨勭啛缁冪▼搴? in exc_info.value.detail
 
     def test_create_requirement_person_days_zero(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1124,7 +1124,7 @@ class TestProjectSkillRequirement:
         with pytest.raises(HTTPException) as exc_info:
             project.create_skill_requirement(sample_project["id"], req_in)
         assert exc_info.value.status_code == 400
-        assert "工时预算必须大于0" in exc_info.value.detail
+        assert "宸ユ椂棰勭畻蹇呴』澶т簬0" in exc_info.value.detail
 
     def test_create_requirement_headcount_zero(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1136,7 +1136,7 @@ class TestProjectSkillRequirement:
         with pytest.raises(HTTPException) as exc_info:
             project.create_skill_requirement(sample_project["id"], req_in)
         assert exc_info.value.status_code == 400
-        assert "所需人数必须大于0" in exc_info.value.detail
+        assert "鎵€闇€浜烘暟蹇呴』澶т簬0" in exc_info.value.detail
 
     def test_create_requirement_duplicate(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1149,7 +1149,7 @@ class TestProjectSkillRequirement:
         with pytest.raises(HTTPException) as exc_info:
             project.create_skill_requirement(sample_project["id"], req_in)
         assert exc_info.value.status_code == 400
-        assert "已存在该技能需求" in exc_info.value.detail
+        assert "宸插瓨鍦ㄨ鎶€鑳介渶姹? in exc_info.value.detail
 
     def test_update_requirement(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1217,7 +1217,7 @@ class TestProjectSkillRequirement:
         )
         req = project.create_skill_requirement(sample_project["id"], req_in)
         result = project.delete_skill_requirement(sample_project["id"], req.id)
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_requirement_not_found(self, sample_project):
         with pytest.raises(HTTPException) as exc_info:
@@ -1238,17 +1238,17 @@ class TestProjectMember:
     def test_create_member(self, sample_project, sample_employee):
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         result = project.create_member(sample_project["id"], member_in)
-        assert result.employee_name == "张三"
-        assert result.role == "开发"
+        assert result.employee_name == "寮犱笁"
+        assert result.role == "寮€鍙?
 
     def test_create_member_project_not_found(self, sample_employee):
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         with pytest.raises(HTTPException) as exc_info:
@@ -1258,39 +1258,39 @@ class TestProjectMember:
     def test_create_member_employee_not_found(self, sample_project):
         member_in = ProjectMemberCreate(
             employee_id=9999,
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         with pytest.raises(HTTPException) as exc_info:
             project.create_member(sample_project["id"], member_in)
         assert exc_info.value.status_code == 400
-        assert "员工" in exc_info.value.detail
+        assert "鍛樺伐" in exc_info.value.detail
 
     def test_create_member_duplicate(self, sample_project, sample_employee):
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         project.create_member(sample_project["id"], member_in)
         with pytest.raises(HTTPException) as exc_info:
             project.create_member(sample_project["id"], member_in)
         assert exc_info.value.status_code == 400
-        assert "已在此项目中" in exc_info.value.detail
+        assert "宸插湪姝ら」鐩腑" in exc_info.value.detail
 
     def test_update_member(self, sample_project, sample_employee):
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         member = project.create_member(sample_project["id"], member_in)
-        update_in = ProjectMemberUpdate(role="测试")
+        update_in = ProjectMemberUpdate(role="娴嬭瘯")
         result = project.update_member(sample_project["id"], member.id, update_in)
-        assert result.role == "测试"
+        assert result.role == "娴嬭瘯"
 
     def test_update_member_not_found(self, sample_project):
-        update_in = ProjectMemberUpdate(role="测试")
+        update_in = ProjectMemberUpdate(role="娴嬭瘯")
         with pytest.raises(HTTPException) as exc_info:
             project.update_member(sample_project["id"], 9999, update_in)
         assert exc_info.value.status_code == 404
@@ -1298,12 +1298,12 @@ class TestProjectMember:
     def test_delete_member(self, sample_project, sample_employee):
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         member = project.create_member(sample_project["id"], member_in)
         result = project.delete_member(sample_project["id"], member.id)
-        assert "已移除" in result["message"]
+        assert "宸茬Щ闄? in result["message"]
 
     def test_delete_member_not_found(self, sample_project):
         with pytest.raises(HTTPException) as exc_info:
@@ -1323,7 +1323,7 @@ class TestProjectTimesheet:
         req = project.create_skill_requirement(sample_project["id"], req_in)
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         project.create_member(sample_project["id"], member_in)
@@ -1345,10 +1345,10 @@ class TestProjectTimesheet:
             employee_id=sample_employee["id"],
             date=date(2026, 5, 10),
             hours=8.0,
-            description="开发工作",
+            description="寮€鍙戝伐浣?,
         )
         result = project.create_timesheet(sample_project["id"], ts_in)
-        assert result.employee_name == "张三"
+        assert result.employee_name == "寮犱笁"
         assert result.skill_name == "Python"
         assert result.hours == 8.0
 
@@ -1366,7 +1366,7 @@ class TestProjectTimesheet:
     def test_create_timesheet_requirement_not_in_project(self, sample_project, sample_employee, sample_skill_catalog):
         self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
         # Create another project with a different requirement
-        proj2 = project.create_project(ProjectCreate(name="项目2", status="planning"))
+        proj2 = project.create_project(ProjectCreate(name="椤圭洰2", status="planning"))
         req2 = project.create_skill_requirement(
             proj2.id,
             ProjectSkillRequirementCreate(
@@ -1385,7 +1385,7 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.create_timesheet(sample_project["id"], ts_in)
         assert exc_info.value.status_code == 400
-        assert "不属于该项目" in exc_info.value.detail
+        assert "涓嶅睘浜庤椤圭洰" in exc_info.value.detail
 
     def test_create_timesheet_employee_not_found(self, sample_project, sample_skill_catalog):
         req_in = ProjectSkillRequirementCreate(
@@ -1404,13 +1404,13 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.create_timesheet(sample_project["id"], ts_in)
         assert exc_info.value.status_code == 400
-        assert "员工" in exc_info.value.detail
+        assert "鍛樺伐" in exc_info.value.detail
 
     def test_create_timesheet_not_member(self, sample_project, sample_skill_catalog):
         # Create another employee but don't add as member
-        from app.repositories import employee as emp_repo
+        from app.repositories import worker as emp_repo
 
-        emp2 = emp_repo.create_employee({"name": "李四", "salary": 10000.0})
+        emp2 = emp_repo.create_worker({"name": "鏉庡洓", "salary": 10000.0})
         req_in = ProjectSkillRequirementCreate(
             skill_id=sample_skill_catalog["id"],
             required_proficiency="advanced",
@@ -1427,7 +1427,7 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.create_timesheet(sample_project["id"], ts_in)
         assert exc_info.value.status_code == 400
-        assert "不是项目成员" in exc_info.value.detail
+        assert "涓嶆槸椤圭洰鎴愬憳" in exc_info.value.detail
 
     def test_create_timesheet_hours_zero(self, sample_project, sample_employee, sample_skill_catalog):
         req = self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
@@ -1440,7 +1440,7 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.create_timesheet(sample_project["id"], ts_in)
         assert exc_info.value.status_code == 400
-        assert "工时必须大于0" in exc_info.value.detail
+        assert "宸ユ椂蹇呴』澶т簬0" in exc_info.value.detail
 
     def test_create_timesheet_future_date(self, sample_project, sample_employee, sample_skill_catalog):
         req = self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
@@ -1454,7 +1454,7 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.create_timesheet(sample_project["id"], ts_in)
         assert exc_info.value.status_code == 400
-        assert "不能在未来" in exc_info.value.detail
+        assert "涓嶈兘鍦ㄦ湭鏉? in exc_info.value.detail
 
     def test_update_timesheet(self, sample_project, sample_employee, sample_skill_catalog):
         req = self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
@@ -1485,7 +1485,7 @@ class TestProjectTimesheet:
         )
         ts = project.create_timesheet(sample_project["id"], ts_in)
         # Create another project and requirement
-        proj2 = project.create_project(ProjectCreate(name="项目2", status="planning"))
+        proj2 = project.create_project(ProjectCreate(name="椤圭洰2", status="planning"))
         req2 = project.create_skill_requirement(
             proj2.id,
             ProjectSkillRequirementCreate(
@@ -1499,7 +1499,7 @@ class TestProjectTimesheet:
         with pytest.raises(HTTPException) as exc_info:
             project.update_timesheet(sample_project["id"], ts.id, update_in)
         assert exc_info.value.status_code == 400
-        assert "不属于该项目" in exc_info.value.detail
+        assert "涓嶅睘浜庤椤圭洰" in exc_info.value.detail
 
     def test_update_timesheet_not_member(self, sample_project, sample_employee, sample_skill_catalog):
         req = self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
@@ -1511,14 +1511,14 @@ class TestProjectTimesheet:
         )
         ts = project.create_timesheet(sample_project["id"], ts_in)
         # Try to change to a non-member employee
-        from app.repositories import employee as emp_repo
+        from app.repositories import worker as emp_repo
 
-        emp2 = emp_repo.create_employee({"name": "李四", "salary": 10000.0})
+        emp2 = emp_repo.create_worker({"name": "鏉庡洓", "salary": 10000.0})
         update_in = ProjectTimesheetUpdate(employee_id=emp2["id"])
         with pytest.raises(HTTPException) as exc_info:
             project.update_timesheet(sample_project["id"], ts.id, update_in)
         assert exc_info.value.status_code == 400
-        assert "不是项目成员" in exc_info.value.detail
+        assert "涓嶆槸椤圭洰鎴愬憳" in exc_info.value.detail
 
     def test_update_timesheet_hours_zero(self, sample_project, sample_employee, sample_skill_catalog):
         req = self._setup_project_with_member_and_req(sample_project, sample_employee, sample_skill_catalog)
@@ -1559,7 +1559,7 @@ class TestProjectTimesheet:
         )
         ts = project.create_timesheet(sample_project["id"], ts_in)
         result = project.delete_timesheet(sample_project["id"], ts.id)
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_timesheet_not_found(self, sample_project):
         with pytest.raises(HTTPException) as exc_info:
@@ -1589,7 +1589,7 @@ class TestProjectProgress:
         req = project.create_skill_requirement(sample_project["id"], req_in)
         member_in = ProjectMemberCreate(
             employee_id=sample_employee["id"],
-            role="开发",
+            role="寮€鍙?,
             assigned_date=date(2026, 1, 15),
         )
         project.create_member(sample_project["id"], member_in)
@@ -1609,9 +1609,9 @@ class TestProjectProgress:
         assert len(result.by_member) == 1
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 9. Agent Memory Service
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestAgentMemoryService:
@@ -1640,7 +1640,7 @@ class TestAgentMemoryService:
         with pytest.raises(HTTPException) as exc_info:
             agent_memory.save_memory(mem_in)
         assert exc_info.value.status_code == 400
-        assert "无效的记忆类型" in exc_info.value.detail
+        assert "鏃犳晥鐨勮蹇嗙被鍨? in exc_info.value.detail
 
     def test_save_memory_invalid_category(self):
         mem_in = MemoryCreate(
@@ -1653,7 +1653,7 @@ class TestAgentMemoryService:
         with pytest.raises(HTTPException) as exc_info:
             agent_memory.save_memory(mem_in)
         assert exc_info.value.status_code == 400
-        assert "无效的业务分类" in exc_info.value.detail
+        assert "鏃犳晥鐨勪笟鍔″垎绫? in exc_info.value.detail
 
     def test_save_memory_invalid_source(self):
         mem_in = MemoryCreate(
@@ -1667,7 +1667,7 @@ class TestAgentMemoryService:
         with pytest.raises(HTTPException) as exc_info:
             agent_memory.save_memory(mem_in)
         assert exc_info.value.status_code == 400
-        assert "无效的来源" in exc_info.value.detail
+        assert "鏃犳晥鐨勬潵婧? in exc_info.value.detail
 
     def test_save_memory_preference_dedup(self):
         mem_in1 = MemoryCreate(
@@ -1790,7 +1790,7 @@ class TestAgentMemoryService:
         )
         saved = agent_memory.save_memory(mem_in)
         result = agent_memory.delete_memory(saved.id)
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_delete_memory_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -1840,7 +1840,7 @@ class TestAgentMemoryService:
         with pytest.raises(HTTPException) as exc_info:
             agent_memory.create_reminder(saved.id, reminder_in)
         assert exc_info.value.status_code == 400
-        assert "无效的提醒类型" in exc_info.value.detail
+        assert "鏃犳晥鐨勬彁閱掔被鍨? in exc_info.value.detail
 
     def test_check_pending_reminders(self):
         # Create memory with user_tag and a reminder in the past
@@ -1881,7 +1881,7 @@ class TestAgentMemoryService:
         )
         reminder = agent_memory.create_reminder(saved.id, reminder_in)
         result = agent_memory.dismiss_reminder(reminder.id)
-        assert "已删除" in result["message"]
+        assert "宸插垹闄? in result["message"]
 
     def test_dismiss_reminder_not_found(self):
         with pytest.raises(HTTPException) as exc_info:
@@ -1900,12 +1900,12 @@ class TestAgentMemoryService:
         )
         agent_memory.save_memory(mem_in)
         result = agent_memory.cleanup_expired()
-        assert "已清理" in result["message"]
+        assert "宸叉竻鐞? in result["message"]
 
 
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 # 10. Knowledge Base Service (with mocks)
-# ═══════════════════════════════════════════════════════════════════
+# 鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺愨晲鈺?
 
 
 class TestKnowledgeBaseService:
@@ -2007,3 +2007,4 @@ class TestKnowledgeBaseService:
         result = knowledge_base.delete_document("nonexistent")
         assert "error" in result
         assert "not found" in result["error"].lower() or "not found" in result["error"]
+

@@ -2,13 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.payroll import (
-    PayrollCreate,
-    PayrollListResponse,
-    PayrollResponse,
-    PayrollUpdate,
-    PayslipDetail,
-)
+from app.schemas.payroll import PayrollCreate, PayrollListResponse, PayrollResponse, PayrollUpdate, PayslipDetail
 from app.services import payroll as payroll_service
 
 router = APIRouter(prefix="/payroll", tags=["薪资管理"])
@@ -25,18 +19,13 @@ def generate_monthly_payroll(month: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=PayrollListResponse)
-def list_payrolls(
-    employee_id: int | None = None,
-    month: str | None = None,
-    status: str | None = None,
-    db: Session = Depends(get_db),
-):
-    return payroll_service.list_payrolls(employee_id, month, status, db)
+def list_payrolls(worker_id: int | None = None, month: str | None = None, status: str | None = None, db: Session = Depends(get_db)):
+    return payroll_service.list_payrolls(worker_id, month, status, db)
 
 
-@router.get("/employee/{employee_id}", response_model=list[PayrollResponse])
-def get_employee_payrolls(employee_id: int, db: Session = Depends(get_db)):
-    return payroll_service.get_employee_payrolls(employee_id, db)
+@router.get("/worker/{worker_id}", response_model=list[PayrollResponse])
+def get_worker_payrolls(worker_id: int, db: Session = Depends(get_db)):
+    return payroll_service.get_worker_payrolls(worker_id, db)
 
 
 @router.get("/payslip/{payroll_id}", response_model=PayslipDetail)

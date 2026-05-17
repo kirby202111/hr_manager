@@ -17,7 +17,7 @@ LEAVE_BALANCE_DEFAULTS = {
 
 
 class LeaveCreate(BaseModel):
-    employee_id: int
+    worker_id: int
     leave_type: str
     start_date: date
     end_date: date
@@ -37,8 +37,8 @@ class LeaveApproval(BaseModel):
 
 class LeaveResponse(BaseModel):
     id: int
-    employee_id: int
-    employee_name: str
+    worker_id: int
+    worker_name: str
     leave_type: str
     leave_type_name: str
     start_date: date
@@ -57,8 +57,8 @@ class LeaveListResponse(BaseModel):
 
 
 class LeaveBalance(BaseModel):
-    employee_id: int
-    employee_name: str
+    worker_id: int
+    worker_name: str
     annual_total: int = 10
     annual_used: int = 0
     annual_remaining: int = 10

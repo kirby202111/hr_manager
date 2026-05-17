@@ -1,15 +1,15 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-# ── Skill definitions ──────────────────────────────────────────
+# 鈹€鈹€ Skill definitions 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 
 class TestCoreSkill:
     def test_skill_metadata(self):
         from app.agent.skills.core import skill
 
-        assert skill.name == "employee_management"
+        assert skill.name == "worker_management"
         assert skill.description
         assert skill.applicability
         assert len(skill.tools) > 0
@@ -19,11 +19,11 @@ class TestCoreSkill:
         from app.agent.skills.core import skill
 
         names = [t.name for t in skill.tools]
-        assert "query_employees" in names
-        assert "query_employee" in names
-        assert "create_employee" in names
-        assert "update_employee" in names
-        assert "delete_employee" in names
+        assert "query_workers" in names
+        assert "query_worker" in names
+        assert "create_worker" in names
+        assert "update_worker" in names
+        assert "delete_worker" in names
 
     def test_tool_openai_format(self):
         from app.agent.skills.core import skill
@@ -46,14 +46,14 @@ class TestEmployeeSkillSkill:
         from app.agent.skills.employee_skill import skill
 
         names = [t.name for t in skill.tools]
-        assert "query_skills" in names or "query_employee_skills" in names
+        assert "query_skills" in names or "query_worker_skills" in names
 
 
 class TestOnboardingSkill:
     def test_skill_metadata(self):
         from app.agent.skills.onboarding import skill
 
-        assert skill.name == "employee_onboarding"
+        assert skill.name == "worker_onboarding"
         assert len(skill.tools) == 0
         assert "onboard_employee" in skill.workflows
 
@@ -62,10 +62,10 @@ class TestOnboardingSkill:
     def test_onboard_employee_success(self, mock_leave, mock_emp):
         from app.agent.skills.onboarding import onboard_employee
 
-        mock_emp.create_employee.return_value = MagicMock(
+        mock_emp.create_worker.return_value = MagicMock(
             model_dump=lambda: {
                 "id": 1,
-                "name": "张三",
+                "name": "寮犱笁",
                 "salary": 10000,
                 "department_id": None,
                 "department_name": None,
@@ -74,7 +74,7 @@ class TestOnboardingSkill:
         mock_leave.get_leave_balance.return_value = MagicMock(
             model_dump=lambda: {"employee_id": 1, "annual_remaining": 10},
         )
-        result = onboard_employee(name="张三", salary=10000)
+        result = onboard_employee(name="寮犱笁", salary=10000)
         assert "error" not in result or result.get("employee_id") == 1
 
     def test_onboard_employee_missing_params(self):
@@ -135,9 +135,9 @@ class TestAnalyticsSkill:
         from app.agent.skills.analytics import _analyze_department_salary
 
         mock_dept_service.list_departments.return_value = MagicMock(
-            departments=[MagicMock(id=1, name="工程部")],
+            departments=[MagicMock(id=1, name="宸ョ▼閮?)],
         )
-        mock_emp_repo.get_employees_by_department.return_value = [
+        mock_emp_repo.get_workers_by_department.return_value = [
             {"salary": 15000},
             {"salary": 20000},
         ]
@@ -209,7 +209,7 @@ class TestMemorySkill:
             memory_type="fact",
             category="general",
             subject="test",
-            content="测试内容",
+            content="娴嬭瘯鍐呭",
         )
         mock_service.save_memory.assert_called_once()
 
@@ -231,7 +231,7 @@ class TestMemorySkill:
         assert "error" in result
 
 
-# ── Skill registration ─────────────────────────────────────────
+# 鈹€鈹€ Skill registration 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 
 class TestSkillRegistration:
@@ -243,7 +243,7 @@ class TestSkillRegistration:
         register_all_skills(registry)
         skills = registry.list_skills()
         skill_names = [s["name"] for s in skills]
-        assert "employee_management" in skill_names
+        assert "worker_management" in skill_names
         assert "skill_management" in skill_names
         assert "leave_management" in skill_names
         assert "attendance_management" in skill_names
@@ -252,7 +252,7 @@ class TestSkillRegistration:
         assert "knowledge_base" in skill_names
         assert "project_management" in skill_names
         assert "memory" in skill_names
-        assert "employee_onboarding" in skill_names
+        assert "worker_onboarding" in skill_names
         assert len(skills) == 10
 
     def test_all_skills_have_tools_or_workflows(self):
@@ -273,3 +273,4 @@ class TestSkillRegistration:
         all_tools = registry.get_all_tools()
         names = [t.name for t in all_tools]
         assert len(names) == len(set(names)), f"Duplicate tool names: {set(n for n in names if names.count(n) > 1)}"
+

@@ -1,3 +1,5 @@
+"""请假模型。"""
+
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Index, Integer, String
@@ -8,13 +10,18 @@ from app.models.base import _to_dict
 
 
 class Leave(Base):
-    __tablename__ = "leaves"
-    __table_args__ = (Index("ix_leaves_employee_status_dates", "employee_id", "status", "start_date", "end_date"),)
+    """员工请假申请与审批流转记录。"""
 
+    __tablename__ = "leaves"
+    __table_args__ = (Index("ix_leaves_worker_status_dates", "worker_id", "status", "start_date", "end_date"),)
+
+    # 请假主体与假别信息。
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[int] = mapped_column(Integer, nullable=False)
     leave_type: Mapped[str] = mapped_column(String, nullable=False)
     leave_type_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    # 日期区间与审批结果。
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     days: Mapped[int] = mapped_column(Integer, nullable=False)

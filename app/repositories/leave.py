@@ -17,15 +17,14 @@ LEAVE_BALANCE_DEFAULTS = {
 }
 
 
-def get_all_leaves(employee_id: int | None = None, status: str | None = None, db: Session | None = None) -> list[dict]:
+def get_all_leaves(worker_id: int | None = None, status: str | None = None, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
         query = session.query(LeaveORM)
-        if employee_id is not None:
-            query = query.filter_by(employee_id=employee_id)
+        if worker_id is not None:
+            query = query.filter_by(worker_id=worker_id)
         if status is not None:
             query = query.filter_by(status=status)
-        records = query.all()
-        return [r.to_dict() for r in records]
+        return [record.to_dict() for record in query.all()]
 
 
 def get_leave_by_id(leave_id: int, db: Session | None = None) -> dict | None:
@@ -34,32 +33,25 @@ def get_leave_by_id(leave_id: int, db: Session | None = None) -> dict | None:
         return record.to_dict() if record else None
 
 
-def get_leaves_by_employee(employee_id: int, db: Session | None = None) -> list[dict]:
+def get_leaves_by_worker(worker_id: int, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        records = session.query(LeaveORM).filter_by(employee_id=employee_id).all()
-        return [r.to_dict() for r in records]
+        return [record.to_dict() for record in session.query(LeaveORM).filter_by(worker_id=worker_id).all()]
 
 
-def get_approved_leaves_by_type(employee_id: int, leave_type: str, db: Session | None = None) -> list[dict]:
+def get_approved_leaves_by_type(worker_id: int, leave_type: str, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        records = (
-            session.query(LeaveORM).filter_by(employee_id=employee_id, leave_type=leave_type, status="approved").all()
-        )
-        return [r.to_dict() for r in records]
+        query = session.query(LeaveORM).filter_by(worker_id=worker_id, leave_type=leave_type, status="approved")
+        return [record.to_dict() for record in query.all()]
 
 
-def get_approved_leaves_in_range(employee_id: int, start_date, end_date, db: Session | None = None) -> list[dict]:
+def get_approved_leaves_in_range(worker_id: int, start_date, end_date, db: Session | None = None) -> list[dict]:
     with db_session(db) as session:
-        records = (
+        query = (
             session.query(LeaveORM)
-            .filter_by(employee_id=employee_id, status="approved")
-            .filter(
-                LeaveORM.start_date <= end_date,
-                LeaveORM.end_date >= start_date,
-            )
-            .all()
+            .filter_by(worker_id=worker_id, status="approved")
+            .filter(LeaveORM.start_date <= end_date, LeaveORM.end_date >= start_date)
         )
-        return [r.to_dict() for r in records]
+        return [record.to_dict() for record in query.all()]
 
 
 def create_leave(leave_data: dict, db: Session | None = None) -> dict:
@@ -76,8 +68,8 @@ def update_leave(leave_id: int, leave_data: dict, db: Session | None = None) -> 
         record = session.get(LeaveORM, leave_id)
         if record is None:
             return None
-        for k, v in leave_data.items():
-            setattr(record, k, v)
+        for key, value in leave_data.items():
+            setattr(record, key, value)
         session.flush()
         session.refresh(record)
         return record.to_dict()

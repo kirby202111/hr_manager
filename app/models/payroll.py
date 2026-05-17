@@ -1,3 +1,5 @@
+"""薪资模型。"""
+
 from datetime import date, datetime
 
 from sqlalchemy import Date, DateTime, Float, Index, Integer, String, UniqueConstraint
@@ -8,15 +10,20 @@ from app.models.base import _to_dict
 
 
 class Payroll(Base):
+    """员工月度薪资单，保存基础工资、奖扣项和发薪状态。"""
+
     __tablename__ = "payrolls"
     __table_args__ = (
-        UniqueConstraint("employee_id", "month", name="uq_payrolls_employee_month"),
-        Index("ix_payrolls_employee_month", "employee_id", "month"),
+        UniqueConstraint("worker_id", "month", name="uq_payrolls_worker_month"),
+        Index("ix_payrolls_worker_month", "worker_id", "month"),
     )
 
+    # 一名员工每月一张薪资单。
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    worker_id: Mapped[int] = mapped_column(Integer, nullable=False)
     month: Mapped[str] = mapped_column(String, nullable=False)
+
+    # 薪资金额字段。
     base_salary: Mapped[float] = mapped_column(Float, nullable=False)
     bonuses: Mapped[float] = mapped_column(Float, nullable=False, default=0)
     deductions: Mapped[float] = mapped_column(Float, nullable=False, default=0)

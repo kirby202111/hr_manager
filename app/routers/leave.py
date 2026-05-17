@@ -2,14 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.schemas.leave import (
-    LeaveApproval,
-    LeaveBalance,
-    LeaveCreate,
-    LeaveListResponse,
-    LeaveResponse,
-    LeaveUpdate,
-)
+from app.schemas.leave import LeaveApproval, LeaveBalance, LeaveCreate, LeaveListResponse, LeaveResponse, LeaveUpdate
 from app.services import leave as leave_service
 
 router = APIRouter(prefix="/leaves", tags=["请假管理"])
@@ -21,17 +14,13 @@ def create_leave(data: LeaveCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=LeaveListResponse)
-def list_leaves(
-    employee_id: int | None = None,
-    status: str | None = None,
-    db: Session = Depends(get_db),
-):
-    return leave_service.list_leaves(employee_id, status, db)
+def list_leaves(worker_id: int | None = None, status: str | None = None, db: Session = Depends(get_db)):
+    return leave_service.list_leaves(worker_id, status, db)
 
 
-@router.get("/employee/{employee_id}/balance", response_model=LeaveBalance)
-def get_leave_balance(employee_id: int, db: Session = Depends(get_db)):
-    return leave_service.get_leave_balance(employee_id, db)
+@router.get("/worker/{worker_id}/balance", response_model=LeaveBalance)
+def get_leave_balance(worker_id: int, db: Session = Depends(get_db)):
+    return leave_service.get_leave_balance(worker_id, db)
 
 
 @router.get("/{leave_id}", response_model=LeaveResponse)
