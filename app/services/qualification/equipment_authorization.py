@@ -1,0 +1,95 @@
+"""设备授权服务。"""
+
+from sqlalchemy.orm import Session
+
+from app.errors import ConflictError, NotFoundError, ValidationError
+from app.repositories import qualification as qualification_repo
+from app.repositories import workforce as workforce_repo
+from app.schemas.qualification import (
+    EquipmentAuthorizationCreate,
+    EquipmentAuthorizationListResponse,
+    EquipmentAuthorizationResponse,
+    EquipmentAuthorizationUpdate,
+)
+
+
+def _to_response(row: dict) -> EquipmentAuthorizationResponse:
+    return EquipmentAuthorizationResponse(**row)
+
+
+def _require_row(equipment_authorization_id: int, db: Session | None = None) -> dict:
+    row = qualification_repo.get_equipment_authorization_by_id(equipment_authorization_id, db)
+    if row is None:
+        raise NotFoundError(f"Equipment authorization {equipment_authorization_id} not found")
+    return row
+
+
+def _validate_payload(payload: dict, db: Session | None = None) -> None:
+    if workforce_repo.get_worker_by_id(payload["worker_id"], db) is None:
+        raise NotFoundError(f"Worker {payload['worker_id']} not found")
+    if payload.get("expires_at") is not None and payload["issued_at"] > payload["expires_at"]:
+        raise ValidationError("issued_at cannot be later than expires_at")
+
+
+def list_equipment_authorizations(
+    worker_id: int | None = None,
+    equipment_code: str | None = None,
+    status: str | None = None,
+    db: Session | None = None,
+) -> EquipmentAuthorizationListResponse:
+    rows = qualification_repo.list_equipment_authorizations(worker_id, equipment_code, status, db)
+    return EquipmentAuthorizationListResponse(
+        equipment_authorizations=[_to_response(row) for row in rows], total=len(rows)
+    )
+
+
+def get_equipment_authorization(
+    equipment_authorization_id: int, db: Session | None = None
+) -> EquipmentAuthorizationResponse:
+    return _to_response(_require_row(equipment_authorization_id, db))
+
+
+def create_equipment_authorization(
+    data: EquipmentAuthorizationCreate,
+    db: Session | None = None,
+) -> EquipmentAuthorizationResponse:
+    payload = data.model_dump()
+    _validate_payload(payload, db)
+    if (
+        qualification_repo.get_equipment_authorization_by_worker_and_equipment(
+            payload["worker_id"], payload["equipment_code"], db
+        )
+        is not None
+    ):
+        raise ConflictError("Equipment authorization already exists")
+    row = qualification_repo.create_equipment_authorization(payload, db)
+    return _to_response(row)
+
+
+def update_equipment_authorization(
+    equipment_authorization_id: int,
+    data: EquipmentAuthorizationUpdate,
+    db: Session | None = None,
+) -> EquipmentAuthorizationResponse:
+    current = _require_row(equipment_authorization_id, db)
+    payload = {**current, **data.model_dump(exclude_unset=True)}
+    _validate_payload(payload, db)
+    existing = qualification_repo.get_equipment_authorization_by_worker_and_equipment(
+        payload["worker_id"], payload["equipment_code"], db
+    )
+    if existing is not None and existing["id"] != equipment_authorization_id:
+        raise ConflictError("Equipment authorization already exists")
+    row = qualification_repo.update_equipment_authorization(
+        equipment_authorization_id,
+        data.model_dump(exclude_unset=True),
+        db,
+    )
+    if row is None:
+        raise NotFoundError(f"Equipment authorization {equipment_authorization_id} not found")
+    return _to_response(row)
+
+
+def delete_equipment_authorization(equipment_authorization_id: int, db: Session | None = None) -> dict[str, str]:
+    _require_row(equipment_authorization_id, db)
+    qualification_repo.delete_equipment_authorization(equipment_authorization_id, db)
+    return {"message": f"Equipment authorization {equipment_authorization_id} deleted"}
