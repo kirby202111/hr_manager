@@ -1,44 +1,17 @@
 # Workforce Ops
 
-Workforce Ops 是一个面向制造业生产现场的人力运营系统。它不是通用 HR SaaS，而是围绕产线实际协同展开，重点处理人员主数据、部门归属、技能与资质、工位资格、班次与排班、请假考勤、薪资核算，以及生产风险校验等业务。
+Workforce Ops 是一个面向制造业现场的人力运营系统。当前仓库以 FastAPI 后端为主，配有一个 Vue 3 聊天前端，以及一套可调用业务能力的 Agent。它覆盖了人员、组织、技能、资质、生产现场、排班、考勤、薪资和项目协同等模块。
 
-项目由后端 API、前端控制台和一个面向业务流程的智能 Agent 组成。系统既能提供常规的增删改查接口，也支持把“新员工入职”“查询班组能力缺口”“生成月度薪资”“校验工位上岗资格”这类动作组织成可调用的技能与工作流。
+这份 README 按当前代码结构更新，重点反映现在已经存在的分层、接口和运行方式。
 
-## 项目目标
+## 当前形态
 
-这个项目试图解决的不是传统人事管理的全量问题，而是制造业现场常见的几类协同难题：
-
-- 人员信息分散，产线、班组、部门之间缺少统一主数据
-- 员工技能、证书、安全培训、设备授权彼此割裂，无法快速判断是否具备上岗资格
-- 排班、请假、考勤、薪资之间关联松散，后续核算容易出错
-- 生产现场的岗位要求、风险信号、人员安排缺少统一视图
-- 业务人员想问一个问题时，往往需要跨多个模块手动拼信息
-
-Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资质、工位、班次、项目和风险这些生产现场对象挂在同一套业务模型上，再通过 API 与 Agent 对外提供能力。
-
-## 核心能力
-
-当前代码结构反映出的核心领域大致包括：
-
-- 人员与组织
-  - 人员主数据
-  - 部门/组织单元
-  - 员工技能与技能目录
-- 现场履约
-  - 考勤签到签退
-  - 请假与余额计算
-  - 薪资生成、发薪和工资单明细
-- 生产现场
-  - 产线、班组、工位
-  - 工位所需技能、证书、设备授权
-  - 生产画像、班组归属、班次定义、排班计划
-  - 工位资格校验与风险信号
-- 项目协同
-  - 项目、成员、技能需求、工时报工
-- 智能能力
-  - 面向业务的技能注册
-  - 入职、考勤、请假、薪资、项目等 Agent skill
-  - 会话记忆与知识库能力
+- 后端是一个 `FastAPI` 应用，入口在 `main.py`，应用版本是 `2.0.0`
+- 前端是一个单路由的聊天界面，位于 `frontend/`，主要消费 Agent 聊天和技能相关接口
+- 数据访问层已经按领域拆成包，并进一步拆到实体模块，例如 `app/repositories/shopfloor/production_line.py`
+- 服务层直接依赖实体级 repository；领域包和顶层 `app/repositories/__init__.py` 仍保留聚合导出
+- Agent 在应用启动时初始化，支持同步问答、SSE 流式问答、会话历史和技能开关
+- 默认数据库是本地 SQLite：`sqlite:///./data/hr_system.db`
 
 ## 技术栈
 
@@ -48,7 +21,9 @@ Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资
 - FastAPI
 - SQLAlchemy 2
 - Alembic
-- Pydantic
+- Pydantic Settings
+- Uvicorn
+- OpenAI SDK
 - SSE Starlette
 - ChromaDB
 
@@ -59,73 +34,185 @@ Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资
 - TypeScript
 - Element Plus
 - Pinia
+- Axios
 
-### 智能 Agent
-
-- OpenAI SDK 兼容调用
-- 可配置的推理模型与 Embedding 模型
-- 业务技能路由、工作流封装、会话记忆
-
-## 目录结构
+## 代码结构
 
 ```text
 .
 ├─ app
-│  ├─ agent            # Agent、技能、记忆、知识库相关逻辑
-│  ├─ models           # ORM 模型
-│  ├─ repositories     # 数据访问层
-│  ├─ routers          # FastAPI 路由
-│  ├─ schemas          # 请求/响应模型
-│  └─ services         # 业务服务层
-├─ frontend            # Vue 前端
-├─ migrations          # Alembic 迁移
-├─ data                # 本地数据库与知识库数据
-└─ main.py             # FastAPI 应用入口
+│  ├─ agent/            # Agent 运行时、路由、技能注册、会话历史
+│  ├─ knowledge_base/   # 知识库接入与检索
+│  ├─ models/           # SQLAlchemy ORM 模型
+│  ├─ repositories/     # 数据访问层，按领域包 + 实体模块拆分
+│  ├─ routers/          # FastAPI 路由
+│  ├─ schemas/          # Pydantic 请求/响应模型
+│  └─ services/         # 业务规则、校验、编排
+├─ frontend/            # Vue 聊天前端
+├─ migrations/          # Alembic 迁移
+├─ data/                # SQLite 和知识库本地数据目录
+├─ main.py              # FastAPI 应用入口
+└─ pyproject.toml       # Python 项目配置
 ```
 
+### 当前分层约定
 
+从现有代码看，主线是：
+
+1. `routers` 负责 HTTP 接口暴露
+2. `services` 负责业务校验和流程编排
+3. `repositories/<domain>/<entity>.py` 负责具体数据访问
+4. `models` 和 `schemas` 分别承载 ORM 结构与 API 结构
+
+Repository 层现在已经是这种形态：
+
+- `app/repositories/organization/organization_unit.py`
+- `app/repositories/workforce/worker.py`
+- `app/repositories/workforce/worker_assignment.py`
+- `app/repositories/shopfloor/production_order.py`
+- `app/repositories/shopfloor/workstation.py`
+
+同时，`app/repositories/<domain>/__init__.py` 和 `app/repositories/__init__.py` 仍然提供聚合导出，方便兼容旧调用路径。
+
+## 领域模块与接口
+
+后端当前挂载了 8 组业务路由和 1 组 Agent 路由。
+
+### 组织与人员
+
+- `/organization-units`
+- `/workers`
+- `/worker-assignments`
+
+### 能力与资质
+
+- `/skills`
+- `/worker-skills`
+- `/certifications`
+- `/worker-certifications`
+- `/safety-trainings`
+- `/worker-safety-trainings`
+- `/equipment-authorizations`
+
+### 生产现场
+
+- `/production-lines`
+- `/production-teams`
+- `/workstations`
+- `/workstation-skill-requirements`
+- `/workstation-certification-requirements`
+- `/workstation-equipment-requirements`
+- `/production-orders`
+- `/production-operations`
+- `/operational-risk-signals`
+- `/operational-risk-reviews`
+
+### 排班与出勤
+
+- `/shift-templates`
+- `/shift-plans`
+- `/shift-assignments`
+- `/attendance-records`
+- `/leave-requests`
+- `/payroll-records`
+
+### 协同
+
+- `/projects`
+- `/project-members`
+- `/project-skill-requirements`
+- `/project-timesheet-entries`
+
+### Agent
+
+- `POST /agent/chat`
+- `POST /agent/chat/stream`
+- `GET /agent/sessions`
+- `GET /agent/sessions/{session_id}/messages`
+- `DELETE /agent/sessions/{session_id}`
+- `GET /agent/skills`
+- `POST /agent/skills/{skill_name}/enable`
+- `POST /agent/skills/{skill_name}/disable`
+
+## 已注册的 Agent 技能
+
+当前 `app/agent/skills/__init__.py` 注册了以下技能：
+
+- `core`
+- `employee_skill`
+- `onboarding`
+- `leave`
+- `attendance`
+- `payroll`
+- `analytics`
+- `knowledge_base`
+- `project`
+- `memory`
+
+这些技能由 `SkillRegistry` 管理，并在应用启动时由 `create_agent()` 完成注册。
+
+## 前端现状
+
+`frontend/` 当前不是完整的业务后台，而是一个面向 Agent 的聊天界面：
+
+- 只有一个路由 `/`
+- 主页面是 `frontend/src/views/ChatView.vue`
+- 主要由会话侧栏、消息窗口、输入框和技能面板组成
+- 支持流式消息消费
+
+如果你在找“人员台账 / 排班列表 / 生产线配置”这类 CRUD 页面，当前代码里还没有对应的前端业务页面。
 
 ## 快速开始
 
 ### 1. 准备环境
 
-- 安装 Python 3.13
-- 安装 Node.js
-- 准备可用的虚拟环境工具或直接使用项目内 `.venv`
+- Python 3.13+
+- Node.js
+- 推荐使用 `uv`
 
-### 2. 配置后端环境变量
+### 2. 配置环境变量
 
-复制 `.env.example` 为 `.env`，并根据实际环境填写：
+复制 `.env.example` 为 `.env`：
 
-```env
-DATABASE_URL=sqlite:///./data/hr_system.db
-
-DEEPSEEK_API_KEY=your_deepseek_api_key_here
-DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-v4-flash
-
-AGENT_MAX_ITERATIONS=10
-AGENT_MAX_HISTORY_MESSAGES=50
-USE_SKILL_ROUTING=true
-
-DASHSCOPE_API_KEY=your_dashscope_api_key_here
-DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-DASHSCOPE_EMBEDDING_MODEL=text-embedding-v4
-
-KNOWLEDGE_BASE_DIR=./data/knowledge_base
-KNOWLEDGE_BASE_CHUNK_SIZE=500
-KNOWLEDGE_BASE_CHUNK_OVERLAP=100
+```bash
+cp .env.example .env
 ```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+然后按需填写数据库、模型服务和知识库相关配置。
+
+当前代码实际读取的主要配置项在 `app/config.py` 中，包括：
+
+- `DATABASE_URL`
+- `DEEPSEEK_API_KEY`
+- `DEEPSEEK_BASE_URL`
+- `DEEPSEEK_MODEL`
+- `AGENT_MAX_ITERATIONS`
+- `AGENT_MAX_HISTORY_MESSAGES`
+- `USE_SKILL_ROUTING`
+- `DEFAULT_USER_TAG`
+- `DASHSCOPE_API_KEY`
+- `DASHSCOPE_BASE_URL`
+- `DASHSCOPE_EMBEDDING_MODEL`
+- `KNOWLEDGE_BASE_DIR`
+- `KNOWLEDGE_BASE_CHUNK_SIZE`
+- `KNOWLEDGE_BASE_CHUNK_OVERLAP`
+- `KNOWLEDGE_BASE_SEARCH_TOP_K`
 
 ### 3. 安装后端依赖
 
-如果你使用 `uv`：
+推荐：
 
 ```bash
-uv sync
+uv sync --dev
 ```
 
-如果你使用 `pip`，需要按 `pyproject.toml` 中的依赖自行安装。
+如果不用 `uv`，至少需要安装 `pyproject.toml` 里的运行依赖；开发检查还需要 `ruff`、`mypy`、`pytest`、`httpx` 等 dev 依赖。
 
 ### 4. 执行数据库迁移
 
@@ -139,7 +226,13 @@ alembic upgrade head
 uvicorn main:app --reload
 ```
 
-默认情况下，后端会开放给前端本地开发地址 `http://localhost:5173`。
+启动后可访问：
+
+- API 根路径：`http://localhost:8000/`
+- Swagger 文档：`http://localhost:8000/docs`
+- ReDoc：`http://localhost:8000/redoc`
+
+注意：当前 CORS 允许的前端来源是 `http://localhost:5173`。
 
 ### 6. 启动前端
 
@@ -149,62 +242,32 @@ npm install
 npm run dev
 ```
 
-## 测试与开发
+前端默认运行在：
 
-### 类型检查
+- `http://localhost:5173`
+
+## 开发检查
+
+当前仓库已经配置：
 
 ```bash
+ruff check app/repositories app/services app/routers main.py
 mypy .
 ```
 
-### 代码风格检查
+`pyproject.toml` 中已经声明了 `pytest`、`pytest-asyncio` 和 `httpx`，但仓库当前没有独立的 `tests/` 目录，自动化测试还不是主要交付面。
 
-```bash
-ruff check .
-```
+## 建议阅读顺序
 
-## Agent 能力说明
+如果第一次接触这个仓库，建议按下面顺序看：
 
-这个项目的一个明显特点，是它不只是一组 REST API。`app/agent` 下还定义了面向业务动作的技能层，典型能力包括：
-
-- 人员管理
-- 入职流程
-- 考勤查询与签到
-- 请假申请与余额查询
-- 薪资生成与查询
-- 项目成员与工时查询
-- 知识库检索
-- 会话记忆
-
-这意味着系统未来可以同时支持两种使用方式：
-
-- 前端表单和常规 API 调用
-- 面向自然语言任务的业务 Agent 调度
-
-## 适用场景
-
-这个项目尤其适合下面这类场景：
-
-- 制造业工厂的现场人力运营平台
-- 需要把技能、证书、安全培训和岗位资格联动起来的系统
-- 需要让排班、请假、考勤、薪资共享同一套人员数据的系统
-- 希望在业务后台中引入流程型 Agent 的内部工具
-
-## 当前状态
-
-从代码组织来看，项目已经具备比较完整的领域拆分和模块边界，但仍处在持续演进阶段。部分模块命名与领域重构仍在推进中，阅读和二次开发时应优先以 `models / schemas / services / routers` 这一套纵向分层为主线理解系统。
-
-## 建议的阅读顺序
-
-如果你第一次接触这个仓库，比较顺手的阅读路径是：
-
-1. `main.py`：看应用入口和路由装配
-2. `app/routers`：看系统提供了哪些接口域
-3. `app/services`：看核心业务规则
-4. `app/models`：看数据对象之间的关系
-5. `app/agent/skills`：看 Agent 能力如何映射到业务动作
-6. `frontend/src`：看前端如何消费这些能力
+1. `main.py`：应用入口、CORS、路由挂载、Agent 初始化
+2. `app/routers/`：系统暴露了哪些 REST 资源
+3. `app/services/`：业务约束和校验逻辑
+4. `app/repositories/`：领域包与实体级数据访问
+5. `app/agent/`：聊天、技能注册、会话历史
+6. `frontend/src/`：当前前端如何消费 Agent 接口
 
 ## 一句话总结
 
-Workforce Ops 更像一个“制造业现场人力运营中台”，而不是简单的员工信息系统。它把人、技能、工位、班次、请假、薪资和风险校验放进了同一个业务上下文里，并为后续接入 Agent 工作流留出了明确接口。
+Workforce Ops 当前已经具备完整的制造业人力运营后端骨架，以及一个可用的 Agent 聊天前端；它的重点不在“传统 HR SaaS 页面”，而在围绕现场人员、资质、排班和生产风险，把结构化接口和可调用技能放到同一套系统里。
