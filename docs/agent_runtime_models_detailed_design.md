@@ -174,7 +174,7 @@ agent_memories
 
 ### 5.4 枚举/取值范围
 
-根据 `app/schemas/agent_memory.py`，当前有效值如下：
+根据历史上的 `app/schemas/agent_memory.py`，当前有效值如下：
 
 #### `memory_type`
 
@@ -290,7 +290,7 @@ memory_reminders
 
 ### 6.4 枚举/取值范围
 
-根据 `app/schemas/agent_memory.py`：
+根据历史上的 `app/schemas/agent_memory.py`：
 
 ```python
 {"one_time", "recurring"}
@@ -480,9 +480,9 @@ from app.agent.models import AgentMemory, ConversationMessage, MemoryReminder
 
 后续待 repository / service 完成切换后再删除。
 
-## 10. 与现有 schema 的对齐要求
+## 10. 与历史 schema 的对齐要求
 
-实现必须与 `app/schemas/agent_memory.py` 对齐。
+虽然 `app/schemas/agent_memory.py` 已被删除，但未来如果恢复 agent runtime schema，仍应与旧 schema 已经暴露出的字段契约保持对齐，除非后续整体重构明确推翻这些契约。
 
 ### 10.1 MemoryResponse 对齐字段
 
@@ -528,7 +528,7 @@ from app.agent.models import AgentMemory, ConversationMessage, MemoryReminder
 - `user_tag`
 - `created_at`
 
-注意：response schema 当前不要求 `updated_at`，但模型层保留它没有问题。
+注意：历史 response schema 不要求 `updated_at`，但模型层保留它没有问题。
 
 ## 11. 与现有 repository 的对齐要求
 
@@ -619,3 +619,49 @@ class AgentMemory(Base, IdentityMixin, TimestampMixin, DictMixin):
 - `ConversationMessage` 不直接关联 `AgentMemory`
 - 短期允许 `app/models/agent_memory.py` 作为兼容转发层
 
+## 15. Agent Runtime Schema 边界补充
+
+### 15.1 为什么删除 `app/schemas/agent_memory.py`
+
+`AgentMemory`、`MemoryReminder`、`ConversationMessage` 属于 agent runtime，而不属于业务 schema 域。
+
+删除 `app/schemas/agent_memory.py` 的原因是：
+
+- 它不对应当前业务 `app/models`
+- 它属于 `app/agent/models` 的独立边界
+- 它会干扰“业务 schema 完全按业务 models 重写”的目标
+
+在这个边界下，`app/schemas` 目录默认只承载业务 schema，而不继续承载旧的 agent memory schema。
+
+### 15.2 业务 schemas 重写的范围
+
+本仓库后续基于业务 `app/models` 的 `schemas` 重写，应只围绕以下业务域展开：
+
+- `organization`
+- `workforce`
+- `capability`
+- `qualification`
+- `shopfloor`
+- `staffing`
+- `attendance`
+- `collaboration`
+
+这些域才是当前业务 `app/models` 的直接映射对象。
+
+### 15.3 后续如果重建 agent runtime schema
+
+如果未来需要恢复 agent runtime schema，推荐遵循以下方向：
+
+- 单独围绕 `app/agent/models` 设计，而不是回到旧的 `app/schemas/agent_memory.py` 上直接修补
+- 输入/输出 schema 的命名、字段和分层直接对应 `AgentMemory`、`MemoryReminder`、`ConversationMessage`
+- 与业务 schema 的聚合导出分离，不重新混入业务 `schemas` 体系
+
+### 15.4 本次删除的迁移约束
+
+本次删除只处理 `schemas` 层，不联动修改以下层：
+
+- `repository`
+- `service`
+- `router`
+
+这些层与 agent runtime schema 的重新对齐，留到后续围绕 `models + schemas` 的整体重构中统一处理。
