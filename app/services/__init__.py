@@ -1,4 +1,4 @@
-"""业务服务层统一导出入口。"""
+﻿"""Service module."""
 
 from app.services import attendance as attendance_services
 from app.services import capability as capability_services

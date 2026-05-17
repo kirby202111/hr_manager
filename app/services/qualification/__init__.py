@@ -1,4 +1,4 @@
-"""资质域服务导出。"""
+﻿"""Service module."""
 
 from app.services.qualification.certification import (
     create_certification,

@@ -1,4 +1,4 @@
-"""组织域仓储，负责组织单元的持久化与查询。"""
+"""组织单元仓储。"""
 
 from sqlalchemy.orm import Session
 

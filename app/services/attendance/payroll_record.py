@@ -1,10 +1,10 @@
-"""薪资记录服务。"""
+﻿"""Service module."""
 
 from sqlalchemy.orm import Session
 
 from app.errors import ConflictError, NotFoundError
-from app.repositories import attendance as attendance_repo
-from app.repositories import workforce as workforce_repo
+from app.repositories.attendance import payroll_record as payroll_record_repo
+from app.repositories.workforce import worker as worker_repo
 from app.schemas.attendance import (
     PayrollRecordCreate,
     PayrollRecordListResponse,
@@ -18,14 +18,14 @@ def _to_response(row: dict) -> PayrollRecordResponse:
 
 
 def _require_row(payroll_record_id: int, db: Session | None = None) -> dict:
-    row = attendance_repo.get_payroll_record_by_id(payroll_record_id, db)
+    row = payroll_record_repo.get_payroll_record_by_id(payroll_record_id, db)
     if row is None:
         raise NotFoundError(f"Payroll record {payroll_record_id} not found")
     return row
 
 
 def _validate_payload(payload: dict, db: Session | None = None) -> None:
-    if workforce_repo.get_worker_by_id(payload["worker_id"], db) is None:
+    if worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")
 
 
@@ -35,7 +35,7 @@ def list_payroll_records(
     status: str | None = None,
     db: Session | None = None,
 ) -> PayrollRecordListResponse:
-    rows = attendance_repo.list_payroll_records(worker_id, pay_period, status, db)
+    rows = payroll_record_repo.list_payroll_records(worker_id, pay_period, status, db)
     return PayrollRecordListResponse(payroll_records=[_to_response(row) for row in rows], total=len(rows))
 
 
@@ -47,11 +47,11 @@ def create_payroll_record(data: PayrollRecordCreate, db: Session | None = None) 
     payload = data.model_dump()
     _validate_payload(payload, db)
     if (
-        attendance_repo.get_payroll_record_by_worker_and_pay_period(payload["worker_id"], payload["pay_period"], db)
+        payroll_record_repo.get_payroll_record_by_worker_and_pay_period(payload["worker_id"], payload["pay_period"], db)
         is not None
     ):
         raise ConflictError("Payroll record already exists")
-    row = attendance_repo.create_payroll_record(payload, db)
+    row = payroll_record_repo.create_payroll_record(payload, db)
     return _to_response(row)
 
 
@@ -63,12 +63,12 @@ def update_payroll_record(
     current = _require_row(payroll_record_id, db)
     payload = {**current, **data.model_dump(exclude_unset=True)}
     _validate_payload(payload, db)
-    existing = attendance_repo.get_payroll_record_by_worker_and_pay_period(
+    existing = payroll_record_repo.get_payroll_record_by_worker_and_pay_period(
         payload["worker_id"], payload["pay_period"], db
     )
     if existing is not None and existing["id"] != payroll_record_id:
         raise ConflictError("Payroll record already exists")
-    row = attendance_repo.update_payroll_record(payroll_record_id, data.model_dump(exclude_unset=True), db)
+    row = payroll_record_repo.update_payroll_record(payroll_record_id, data.model_dump(exclude_unset=True), db)
     if row is None:
         raise NotFoundError(f"Payroll record {payroll_record_id} not found")
     return _to_response(row)
@@ -76,5 +76,5 @@ def update_payroll_record(
 
 def delete_payroll_record(payroll_record_id: int, db: Session | None = None) -> dict[str, str]:
     _require_row(payroll_record_id, db)
-    attendance_repo.delete_payroll_record(payroll_record_id, db)
+    payroll_record_repo.delete_payroll_record(payroll_record_id, db)
     return {"message": f"Payroll record {payroll_record_id} deleted"}

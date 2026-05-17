@@ -1,4 +1,4 @@
-"""协同域服务导出。"""
+﻿"""Service module."""
 
 from app.services.collaboration import (
     project,

@@ -1,11 +1,14 @@
-"""风险信号服务。"""
+﻿"""Service module."""
 
 from sqlalchemy.orm import Session
 
 from app.errors import NotFoundError
-from app.repositories import shopfloor as shopfloor_repo
-from app.repositories import staffing as staffing_repo
-from app.repositories import workforce as workforce_repo
+from app.repositories.shopfloor import operational_risk_signal as operational_risk_signal_repo
+from app.repositories.shopfloor import production_line as production_line_repo
+from app.repositories.shopfloor import production_order as production_order_repo
+from app.repositories.shopfloor import workstation as workstation_repo
+from app.repositories.staffing import shift_assignment as shift_assignment_repo
+from app.repositories.workforce import worker as worker_repo
 from app.schemas.shopfloor import (
     OperationalRiskSignalCreate,
     OperationalRiskSignalListResponse,
@@ -19,7 +22,7 @@ def _to_response(row: dict) -> OperationalRiskSignalResponse:
 
 
 def _require_row(operational_risk_signal_id: int, db: Session | None = None) -> dict:
-    row = shopfloor_repo.get_operational_risk_signal_by_id(operational_risk_signal_id, db)
+    row = operational_risk_signal_repo.get_operational_risk_signal_by_id(operational_risk_signal_id, db)
     if row is None:
         raise NotFoundError(f"Operational risk signal {operational_risk_signal_id} not found")
     return row
@@ -28,24 +31,24 @@ def _require_row(operational_risk_signal_id: int, db: Session | None = None) -> 
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if (
         payload.get("production_order_id") is not None
-        and shopfloor_repo.get_production_order_by_id(payload["production_order_id"], db) is None
+        and production_order_repo.get_production_order_by_id(payload["production_order_id"], db) is None
     ):
         raise NotFoundError(f"Production order {payload['production_order_id']} not found")
-    if payload.get("worker_id") is not None and workforce_repo.get_worker_by_id(payload["worker_id"], db) is None:
+    if payload.get("worker_id") is not None and worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")
     if (
         payload.get("production_line_id") is not None
-        and shopfloor_repo.get_production_line_by_id(payload["production_line_id"], db) is None
+        and production_line_repo.get_production_line_by_id(payload["production_line_id"], db) is None
     ):
         raise NotFoundError(f"Production line {payload['production_line_id']} not found")
     if (
         payload.get("workstation_id") is not None
-        and shopfloor_repo.get_workstation_by_id(payload["workstation_id"], db) is None
+        and workstation_repo.get_workstation_by_id(payload["workstation_id"], db) is None
     ):
         raise NotFoundError(f"Workstation {payload['workstation_id']} not found")
     if (
         payload.get("shift_assignment_id") is not None
-        and staffing_repo.get_shift_assignment_by_id(payload["shift_assignment_id"], db) is None
+        and shift_assignment_repo.get_shift_assignment_by_id(payload["shift_assignment_id"], db) is None
     ):
         raise NotFoundError(f"Shift assignment {payload['shift_assignment_id']} not found")
 
@@ -59,7 +62,7 @@ def list_operational_risk_signals(
     status: str | None = None,
     db: Session | None = None,
 ) -> OperationalRiskSignalListResponse:
-    rows = shopfloor_repo.list_operational_risk_signals(
+    rows = operational_risk_signal_repo.list_operational_risk_signals(
         production_order_id,
         worker_id,
         production_line_id,
@@ -85,7 +88,7 @@ def create_operational_risk_signal(
 ) -> OperationalRiskSignalResponse:
     payload = data.model_dump()
     _validate_links(payload, db)
-    row = shopfloor_repo.create_operational_risk_signal(payload, db)
+    row = operational_risk_signal_repo.create_operational_risk_signal(payload, db)
     return _to_response(row)
 
 
@@ -97,7 +100,7 @@ def update_operational_risk_signal(
     current = _require_row(operational_risk_signal_id, db)
     payload = {**current, **data.model_dump(exclude_unset=True)}
     _validate_links(payload, db)
-    row = shopfloor_repo.update_operational_risk_signal(
+    row = operational_risk_signal_repo.update_operational_risk_signal(
         operational_risk_signal_id, data.model_dump(exclude_unset=True), db
     )
     if row is None:
@@ -107,5 +110,5 @@ def update_operational_risk_signal(
 
 def delete_operational_risk_signal(operational_risk_signal_id: int, db: Session | None = None) -> dict[str, str]:
     _require_row(operational_risk_signal_id, db)
-    shopfloor_repo.delete_operational_risk_signal(operational_risk_signal_id, db)
+    operational_risk_signal_repo.delete_operational_risk_signal(operational_risk_signal_id, db)
     return {"message": f"Operational risk signal {operational_risk_signal_id} deleted"}

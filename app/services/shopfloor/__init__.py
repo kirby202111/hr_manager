@@ -1,4 +1,4 @@
-"""生产现场域服务导出。"""
+﻿"""Service module."""
 
 from app.services.shopfloor import (
     operational_risk_review,

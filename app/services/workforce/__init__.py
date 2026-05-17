@@ -1,4 +1,4 @@
-"""人员域服务导出。"""
+﻿"""Service module."""
 
 from app.services.workforce.worker import create_worker, delete_worker, get_worker, list_workers, update_worker
 from app.services.workforce.worker_assignment import (

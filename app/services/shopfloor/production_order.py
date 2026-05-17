@@ -1,9 +1,10 @@
-"""生产工单服务。"""
+﻿"""Service module."""
 
 from sqlalchemy.orm import Session
 
 from app.errors import ConflictError, NotFoundError
-from app.repositories import shopfloor as shopfloor_repo
+from app.repositories.shopfloor import production_line as production_line_repo
+from app.repositories.shopfloor import production_order as production_order_repo
 from app.schemas.shopfloor import (
     ProductionOrderCreate,
     ProductionOrderListResponse,
@@ -17,7 +18,7 @@ def _to_response(row: dict) -> ProductionOrderResponse:
 
 
 def _require_row(production_order_id: int, db: Session | None = None) -> dict:
-    row = shopfloor_repo.get_production_order_by_id(production_order_id, db)
+    row = production_order_repo.get_production_order_by_id(production_order_id, db)
     if row is None:
         raise NotFoundError(f"Production order {production_order_id} not found")
     return row
@@ -29,7 +30,7 @@ def list_production_orders(
     status: str | None = None,
     db: Session | None = None,
 ) -> ProductionOrderListResponse:
-    rows = shopfloor_repo.list_production_orders(production_line_id, order_number, status, db)
+    rows = production_order_repo.list_production_orders(production_line_id, order_number, status, db)
     return ProductionOrderListResponse(production_orders=[_to_response(row) for row in rows], total=len(rows))
 
 
@@ -40,12 +41,12 @@ def get_production_order(production_order_id: int, db: Session | None = None) ->
 def create_production_order(data: ProductionOrderCreate, db: Session | None = None) -> ProductionOrderResponse:
     if (
         data.production_line_id is not None
-        and shopfloor_repo.get_production_line_by_id(data.production_line_id, db) is None
+        and production_line_repo.get_production_line_by_id(data.production_line_id, db) is None
     ):
         raise NotFoundError(f"Production line {data.production_line_id} not found")
-    if shopfloor_repo.get_production_order_by_order_number(data.order_number, db) is not None:
+    if production_order_repo.get_production_order_by_order_number(data.order_number, db) is not None:
         raise ConflictError(f"Production order number '{data.order_number}' already exists")
-    row = shopfloor_repo.create_production_order(data.model_dump(), db)
+    row = production_order_repo.create_production_order(data.model_dump(), db)
     return _to_response(row)
 
 
@@ -58,13 +59,13 @@ def update_production_order(
     payload = {**current, **data.model_dump(exclude_unset=True)}
     if (
         payload.get("production_line_id") is not None
-        and shopfloor_repo.get_production_line_by_id(payload["production_line_id"], db) is None
+        and production_line_repo.get_production_line_by_id(payload["production_line_id"], db) is None
     ):
         raise NotFoundError(f"Production line {payload['production_line_id']} not found")
-    existing = shopfloor_repo.get_production_order_by_order_number(payload["order_number"], db)
+    existing = production_order_repo.get_production_order_by_order_number(payload["order_number"], db)
     if existing is not None and existing["id"] != production_order_id:
         raise ConflictError(f"Production order number '{payload['order_number']}' already exists")
-    row = shopfloor_repo.update_production_order(production_order_id, data.model_dump(exclude_unset=True), db)
+    row = production_order_repo.update_production_order(production_order_id, data.model_dump(exclude_unset=True), db)
     if row is None:
         raise NotFoundError(f"Production order {production_order_id} not found")
     return _to_response(row)
@@ -72,5 +73,5 @@ def update_production_order(
 
 def delete_production_order(production_order_id: int, db: Session | None = None) -> dict[str, str]:
     _require_row(production_order_id, db)
-    shopfloor_repo.delete_production_order(production_order_id, db)
+    production_order_repo.delete_production_order(production_order_id, db)
     return {"message": f"Production order {production_order_id} deleted"}

@@ -1,4 +1,4 @@
-"""能力域服务导出。"""
+﻿"""Service module."""
 
 from app.services.capability.skill import create_skill, delete_skill, get_skill, list_skills, update_skill
 from app.services.capability.worker_skill import (

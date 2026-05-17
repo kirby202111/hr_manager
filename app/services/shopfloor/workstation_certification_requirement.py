@@ -1,10 +1,13 @@
-"""工位证书要求服务。"""
+﻿"""Service module."""
 
 from sqlalchemy.orm import Session
 
 from app.errors import ConflictError, NotFoundError
-from app.repositories import qualification as qualification_repo
-from app.repositories import shopfloor as shopfloor_repo
+from app.repositories.qualification import certification as certification_repo
+from app.repositories.shopfloor import workstation as workstation_repo
+from app.repositories.shopfloor import (
+    workstation_certification_requirement as workstation_certification_requirement_repo,
+)
 from app.schemas.shopfloor import (
     WorkstationCertificationRequirementCreate,
     WorkstationCertificationRequirementListResponse,
@@ -18,14 +21,17 @@ def _to_response(row: dict) -> WorkstationCertificationRequirementResponse:
 
 
 def _require_row(requirement_id: int, db: Session | None = None) -> dict:
-    row = shopfloor_repo.get_workstation_certification_requirement_by_id(requirement_id, db)
+    row = workstation_certification_requirement_repo.get_workstation_certification_requirement_by_id(requirement_id, db)
     if row is None:
         raise NotFoundError(f"Workstation certification requirement {requirement_id} not found")
     return row
 
 
 def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int | None = None) -> bool:
-    rows = shopfloor_repo.list_workstation_certification_requirements(payload["workstation_id"], db)
+    rows = workstation_certification_requirement_repo.list_workstation_certification_requirements(
+        payload["workstation_id"],
+        db,
+    )
     for row in rows:
         if exclude_id is not None and row["id"] == exclude_id:
             continue
@@ -38,7 +44,7 @@ def list_workstation_certification_requirements(
     workstation_id: int | None = None,
     db: Session | None = None,
 ) -> WorkstationCertificationRequirementListResponse:
-    rows = shopfloor_repo.list_workstation_certification_requirements(workstation_id, db)
+    rows = workstation_certification_requirement_repo.list_workstation_certification_requirements(workstation_id, db)
     return WorkstationCertificationRequirementListResponse(
         workstation_certification_requirements=[_to_response(row) for row in rows],
         total=len(rows),
@@ -57,13 +63,13 @@ def create_workstation_certification_requirement(
     db: Session | None = None,
 ) -> WorkstationCertificationRequirementResponse:
     payload = data.model_dump()
-    if shopfloor_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
+    if workstation_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
         raise NotFoundError(f"Workstation {payload['workstation_id']} not found")
-    if qualification_repo.get_certification_by_id(payload["certification_id"], db) is None:
+    if certification_repo.get_certification_by_id(payload["certification_id"], db) is None:
         raise NotFoundError(f"Certification {payload['certification_id']} not found")
     if _exists_duplicate(payload, db):
         raise ConflictError("Workstation certification requirement already exists")
-    row = shopfloor_repo.create_workstation_certification_requirement(payload, db)
+    row = workstation_certification_requirement_repo.create_workstation_certification_requirement(payload, db)
     return _to_response(row)
 
 
@@ -74,13 +80,13 @@ def update_workstation_certification_requirement(
 ) -> WorkstationCertificationRequirementResponse:
     current = _require_row(requirement_id, db)
     payload = {**current, **data.model_dump(exclude_unset=True)}
-    if shopfloor_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
+    if workstation_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
         raise NotFoundError(f"Workstation {payload['workstation_id']} not found")
-    if qualification_repo.get_certification_by_id(payload["certification_id"], db) is None:
+    if certification_repo.get_certification_by_id(payload["certification_id"], db) is None:
         raise NotFoundError(f"Certification {payload['certification_id']} not found")
     if _exists_duplicate(payload, db, exclude_id=requirement_id):
         raise ConflictError("Workstation certification requirement already exists")
-    row = shopfloor_repo.update_workstation_certification_requirement(
+    row = workstation_certification_requirement_repo.update_workstation_certification_requirement(
         requirement_id, data.model_dump(exclude_unset=True), db
     )
     if row is None:
@@ -90,5 +96,5 @@ def update_workstation_certification_requirement(
 
 def delete_workstation_certification_requirement(requirement_id: int, db: Session | None = None) -> dict[str, str]:
     _require_row(requirement_id, db)
-    shopfloor_repo.delete_workstation_certification_requirement(requirement_id, db)
+    workstation_certification_requirement_repo.delete_workstation_certification_requirement(requirement_id, db)
     return {"message": f"Workstation certification requirement {requirement_id} deleted"}

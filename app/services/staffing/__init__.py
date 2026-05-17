@@ -1,4 +1,4 @@
-"""排班域服务导出。"""
+﻿"""Service module."""
 
 from app.services.staffing import shift_assignment, shift_plan, shift_template
 
