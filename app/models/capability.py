@@ -32,21 +32,29 @@ class Skill(Base, IdentityMixin, TimestampMixin, DictMixin):
     worker_skills: Mapped[list[WorkerSkill]] = relationship(
         "WorkerSkill",
         back_populates="skill",
+        primaryjoin="Skill.id == foreign(WorkerSkill.skill_id)",
+        foreign_keys="WorkerSkill.skill_id",
         cascade="all, delete-orphan",
     )
     workstation_requirements: Mapped[list[WorkstationSkillRequirement]] = relationship(
         "WorkstationSkillRequirement",
         back_populates="skill",
+        primaryjoin="Skill.id == foreign(WorkstationSkillRequirement.skill_id)",
+        foreign_keys="WorkstationSkillRequirement.skill_id",
         cascade="all, delete-orphan",
     )
     project_requirements: Mapped[list[ProjectSkillRequirement]] = relationship(
         "ProjectSkillRequirement",
         back_populates="skill",
+        primaryjoin="Skill.id == foreign(ProjectSkillRequirement.skill_id)",
+        foreign_keys="ProjectSkillRequirement.skill_id",
         cascade="all, delete-orphan",
     )
     safety_trainings: Mapped[list[SafetyTraining]] = relationship(
         "SafetyTraining",
         back_populates="skill",
+        primaryjoin="Skill.id == foreign(SafetyTraining.skill_id)",
+        foreign_keys="SafetyTraining.skill_id",
     )
 
 

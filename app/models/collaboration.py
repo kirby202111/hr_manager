@@ -32,16 +32,22 @@ class Project(Base, IdentityMixin, TimestampMixin, DictMixin):
     members: Mapped[list[ProjectMember]] = relationship(
         "ProjectMember",
         back_populates="project",
+        primaryjoin="Project.id == foreign(ProjectMember.project_id)",
+        foreign_keys="ProjectMember.project_id",
         cascade="all, delete-orphan",
     )
     skill_requirements: Mapped[list[ProjectSkillRequirement]] = relationship(
         "ProjectSkillRequirement",
         back_populates="project",
+        primaryjoin="Project.id == foreign(ProjectSkillRequirement.project_id)",
+        foreign_keys="ProjectSkillRequirement.project_id",
         cascade="all, delete-orphan",
     )
     timesheet_entries: Mapped[list[ProjectTimesheetEntry]] = relationship(
         "ProjectTimesheetEntry",
         back_populates="project",
+        primaryjoin="Project.id == foreign(ProjectTimesheetEntry.project_id)",
+        foreign_keys="ProjectTimesheetEntry.project_id",
         cascade="all, delete-orphan",
     )
 
@@ -105,6 +111,8 @@ class ProjectSkillRequirement(Base, IdentityMixin, TimestampMixin, DictMixin):
     timesheet_entries: Mapped[list[ProjectTimesheetEntry]] = relationship(
         "ProjectTimesheetEntry",
         back_populates="project_skill_requirement",
+        primaryjoin="ProjectSkillRequirement.id == foreign(ProjectTimesheetEntry.project_skill_requirement_id)",
+        foreign_keys="ProjectTimesheetEntry.project_skill_requirement_id",
     )
 
 

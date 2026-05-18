@@ -33,6 +33,8 @@ class ShiftTemplate(Base, IdentityMixin, TimestampMixin, DictMixin):
     shift_plans: Mapped[list[ShiftPlan]] = relationship(
         "ShiftPlan",
         back_populates="shift_template",
+        primaryjoin="ShiftTemplate.id == foreign(ShiftPlan.shift_template_id)",
+        foreign_keys="ShiftPlan.shift_template_id",
         cascade="all, delete-orphan",
     )
 
@@ -80,6 +82,8 @@ class ShiftPlan(Base, IdentityMixin, TimestampMixin, DictMixin):
     assignments: Mapped[list[ShiftAssignment]] = relationship(
         "ShiftAssignment",
         back_populates="shift_plan",
+        primaryjoin="ShiftPlan.id == foreign(ShiftAssignment.shift_plan_id)",
+        foreign_keys="ShiftAssignment.shift_plan_id",
         cascade="all, delete-orphan",
     )
 
@@ -121,6 +125,8 @@ class ShiftAssignment(Base, IdentityMixin, TimestampMixin, DictMixin):
     risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(
         "OperationalRiskSignal",
         back_populates="shift_assignment",
+        primaryjoin="ShiftAssignment.id == foreign(OperationalRiskSignal.shift_assignment_id)",
+        foreign_keys="OperationalRiskSignal.shift_assignment_id",
     )
 
 

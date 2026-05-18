@@ -1,824 +1,862 @@
-"""模拟数据填充脚本 - 电子车间员工管理系统"""
+"""Seed the database with coherent sample data for the current schema."""
+
+from __future__ import annotations
 
 import os
 import random
 import sys
-from datetime import date, datetime, time, timedelta
+from datetime import date, time, timedelta
 
-# Ensure project root is on sys.path so `app` is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database import Base, SessionLocal, engine
-from app.schema import initialize_database
+from app.database import Base, SessionLocal
 from app.models import (
-    Attendance,
-    Department,
-    Employee,
-    EmployeeSkill,
-    Leave,
-    Payroll,
+    AttendanceRecord,
+    Certification,
+    EquipmentAuthorization,
+    LeaveRequest,
+    OperationalRiskReview,
+    OperationalRiskSignal,
+    OrganizationUnit,
+    PayrollRecord,
+    ProductionLine,
+    ProductionOperation,
+    ProductionOrder,
+    ProductionTeam,
     Project,
     ProjectMember,
     ProjectSkillRequirement,
-    ProjectTimesheet,
-    SkillCatalog,
+    ProjectTimesheetEntry,
+    SafetyTraining,
+    ShiftAssignment,
+    ShiftPlan,
+    ShiftTemplate,
+    Skill,
+    Worker,
+    WorkerAssignment,
+    WorkerCertification,
+    WorkerSafetyTraining,
+    WorkerSkill,
+    Workstation,
+    WorkstationCertificationRequirement,
+    WorkstationEquipmentRequirement,
+    WorkstationSkillRequirement,
 )
+from app.schema import initialize_database
 
-# ── 电子车间部门 ──────────────────────────────────────────────
-DEPARTMENTS = [
-    {"name": "生产部", "description": "负责电子产品组装、焊接与测试", "manager": "王建国"},
-    {"name": "品质部", "description": "负责来料检验、制程管控与成品检测", "manager": "李明辉"},
-    {"name": "工程部", "description": "负责工艺改进、设备维护与SOP编制", "manager": "张伟东"},
-    {"name": "仓储物流部", "description": "负责物料收发、库存管理与成品发货", "manager": "陈志强"},
-    {"name": "行政人事部", "description": "负责招聘、培训、考勤与后勤保障", "manager": "刘芳"},
-    {"name": "研发部", "description": "负责新产品设计、样机试制与技术文档", "manager": "赵海涛"},
-]
-
-# ── 员工姓名池 ────────────────────────────────────────────────
-EMPLOYEE_NAMES = [
-    "王建国",
-    "李明辉",
-    "张伟东",
-    "陈志强",
-    "刘芳",
-    "赵海涛",
-    "周磊",
-    "吴秀英",
-    "孙浩",
-    "杨丽",
-    "朱军",
-    "何晓燕",
-    "林涛",
-    "黄艳",
-    "马超",
-    "罗敏",
-    "谢勇",
-    "韩雪梅",
-    "唐志刚",
-    "冯玉兰",
-    "曹鹏",
-    "邓丽华",
-    "许强",
-    "彭小兰",
-    "肖伟",
-    "田静",
-    "袁波",
-    "蒋秀芳",
-    "蔡明",
-    "潘红",
-    "余斌",
-    "叶丽萍",
-    "范晓东",
-    "钟文",
-    "姚华",
-    "卢秀珍",
-    "廖建军",
-    "邵英",
-    "孔维",
-    "汤美玲",
-    "严刚",
-    "邹艳",
-    "熊飞",
-    "金秀兰",
-    "陆强",
-    "郝丽",
-    "段明",
-    "雷小燕",
-]
-
-# 部门对应的薪资范围 (base)
-DEPT_SALARY_RANGES = {
-    "生产部": (4500, 7500),
-    "品质部": (5000, 8000),
-    "工程部": (6000, 12000),
-    "仓储物流部": (4000, 6500),
-    "行政人事部": (4500, 8000),
-    "研发部": (8000, 15000),
-}
-
-# 部门对应的员工人数
-DEPT_EMPLOYEE_COUNTS = {
-    "生产部": 15,
-    "品质部": 8,
-    "工程部": 6,
-    "仓储物流部": 5,
-    "行政人事部": 4,
-    "研发部": 10,
-}
-
-# 请假类型
-LEAVE_TYPES = [
-    ("sick", "病假"),
-    ("annual", "年假"),
-    ("personal", "事假"),
-    ("other", "其他"),
-]
-
-LEAVE_REASONS = {
-    "sick": ["感冒发烧", "肠胃不适", "牙痛就医", "身体检查"],
-    "annual": ["回老家探亲", "旅游休假", "家庭聚会", "个人休假"],
-    "personal": ["家中有事", "办理证件", "房屋搬迁", "陪护家人"],
-    "other": ["其他原因"],
-}
-
-LEAVE_STATUSES = ["approved", "approved", "approved", "pending", "rejected"]
-
-# ── 员工技能配置 ────────────────────────────────────────────────
-DEPT_SKILLS = {
-    "生产部": [
-        {
-            "skill_name": "SMT贴片操作",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "波峰焊操作",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "手工焊接",
-            "proficiency_level": "expert",
-            "years_of_experience": None,
-            "certification": "IPC-A-610",
-        },
-        {"skill_name": "产品组装", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {
-            "skill_name": "功能测试",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {"skill_name": "5S管理", "proficiency_level": "beginner", "years_of_experience": None, "certification": None},
-    ],
-    "品质部": [
-        {
-            "skill_name": "IPC-A-610检验",
-            "proficiency_level": "expert",
-            "years_of_experience": None,
-            "certification": "IPC-A-610 CIS",
-        },
-        {
-            "skill_name": "来料检验(IQC)",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "示波器使用",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "SPC统计制程管控",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "万用表操作",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": None,
-        },
-    ],
-    "工程部": [
-        {"skill_name": "AutoCAD", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {
-            "skill_name": "PLC编程",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {"skill_name": "设备维修", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {"skill_name": "SOP编制", "proficiency_level": "expert", "years_of_experience": None, "certification": None},
-        {
-            "skill_name": "FMEA分析",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-    ],
-    "仓储物流部": [
-        {
-            "skill_name": "ERP系统操作",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "叉车操作",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": "叉车操作证",
-        },
-        {
-            "skill_name": "库存管理",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-    ],
-    "行政人事部": [
-        {"skill_name": "劳动法规", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {
-            "skill_name": "招聘面试",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "Office办公软件",
-            "proficiency_level": "expert",
-            "years_of_experience": None,
-            "certification": None,
-        },
-    ],
-    "研发部": [
-        {"skill_name": "C/C++", "proficiency_level": "advanced", "years_of_experience": None, "certification": None},
-        {
-            "skill_name": "Python",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "Altium Designer",
-            "proficiency_level": "expert",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "嵌入式开发",
-            "proficiency_level": "advanced",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "电路仿真",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "信号完整性分析",
-            "proficiency_level": "beginner",
-            "years_of_experience": None,
-            "certification": None,
-        },
-        {
-            "skill_name": "EMC设计",
-            "proficiency_level": "intermediate",
-            "years_of_experience": None,
-            "certification": None,
-        },
-    ],
-}
-
-PROFICIENCY_LEVELS = ["beginner", "intermediate", "advanced", "expert"]
-
-# 技能分类映射
-SKILL_CATEGORIES = {
-    "SMT贴片操作": "生产操作",
-    "波峰焊操作": "生产操作",
-    "手工焊接": "生产操作",
-    "产品组装": "生产操作",
-    "功能测试": "生产操作",
-    "5S管理": "生产操作",
-    "IPC-A-610检验": "品质检验",
-    "来料检验(IQC)": "品质检验",
-    "示波器使用": "品质检验",
-    "SPC统计制程管控": "品质检验",
-    "万用表操作": "品质检验",
-    "AutoCAD": "工程技术",
-    "PLC编程": "工程技术",
-    "设备维修": "工程技术",
-    "SOP编制": "工程技术",
-    "FMEA分析": "工程技术",
-    "ERP系统操作": "仓储物流",
-    "叉车操作": "仓储物流",
-    "库存管理": "仓储物流",
-    "劳动法规": "行政管理",
-    "招聘面试": "行政管理",
-    "Office办公软件": "行政管理",
-    "C/C++": "研发技术",
-    "Python": "研发技术",
-    "Altium Designer": "研发技术",
-    "嵌入式开发": "研发技术",
-    "电路仿真": "研发技术",
-    "信号完整性分析": "研发技术",
-    "EMC设计": "研发技术",
-}
-
-# ── 项目种子数据 ──────────────────────────────────────────────
-PROJECTS_DATA = [
-    {
-        "name": "智能质检系统开发",
-        "description": "基于机器视觉的PCB板自动检测系统，替代人工目检",
-        "status": "active",
-        "start_date": date(2026, 3, 1),
-        "end_date": date(2026, 8, 31),
-    },
-    {
-        "name": "产线MES系统集成",
-        "description": "将现有生产线设备接入MES系统，实现生产数据实时采集",
-        "status": "active",
-        "start_date": date(2026, 4, 15),
-        "end_date": date(2026, 10, 31),
-    },
-    {
-        "name": "新产品NPI导入",
-        "description": "新一代通信模块的试产与量产导入",
-        "status": "planning",
-        "start_date": date(2026, 6, 1),
-        "end_date": date(2026, 12, 31),
-    },
-]
+TODAY = date(2026, 5, 18)
 
 
-def random_time_around(base_hour: int, base_minute: int, spread_minutes: int = 30) -> time:
-    """生成基准时间前后 spread_minutes 分钟内的随机时间"""
-    total_minutes = base_hour * 60 + base_minute + random.randint(-spread_minutes, spread_minutes)
-    total_minutes = max(0, min(23 * 60 + 59, total_minutes))
-    return time(total_minutes // 60, total_minutes % 60)
+def reset_database(session) -> None:
+    for table in reversed(Base.metadata.sorted_tables):
+        session.execute(table.delete())
+    session.commit()
 
 
-def seed_departments(session) -> dict[str, int]:
-    """创建部门，返回 {部门名: id}"""
-    dept_ids = {}
-    for dept_data in DEPARTMENTS:
-        dept = Department(**dept_data)
-        session.add(dept)
+def seed_organization(session) -> dict[str, OrganizationUnit]:
+    units = [
+        OrganizationUnit(code="PLANT-SZ", name="Shenzhen Plant", unit_type="plant", status="active"),
+        OrganizationUnit(code="MFG", name="Manufacturing", unit_type="department", status="active", parent_id=1),
+        OrganizationUnit(code="QA", name="Quality", unit_type="department", status="active", parent_id=1),
+        OrganizationUnit(code="ENG", name="Engineering", unit_type="department", status="active", parent_id=1),
+        OrganizationUnit(code="WH", name="Warehouse", unit_type="department", status="active", parent_id=1),
+    ]
+    session.add_all(units)
+    session.flush()
+    return {unit.code: unit for unit in units}
+
+
+def seed_skills(session) -> dict[str, Skill]:
+    skills = [
+        Skill(code="SMT", name="SMT Operation", category="manufacturing", status="active"),
+        Skill(code="ASSY", name="Product Assembly", category="manufacturing", status="active"),
+        Skill(code="TEST", name="Functional Testing", category="quality", status="active"),
+        Skill(code="IPC610", name="IPC-A-610 Inspection", category="quality", status="active"),
+        Skill(code="PLC", name="PLC Programming", category="engineering", status="active"),
+        Skill(code="MES", name="MES Configuration", category="engineering", status="active"),
+        Skill(code="FORK", name="Forklift Operation", category="warehouse", status="active"),
+        Skill(code="WMS", name="Warehouse System", category="warehouse", status="active"),
+    ]
+    session.add_all(skills)
+    session.flush()
+    return {skill.code: skill for skill in skills}
+
+
+def seed_certifications(session) -> dict[str, Certification]:
+    certifications = [
+        Certification(
+            code="CERT-IPC",
+            name="IPC Specialist",
+            category="quality",
+            validity_months=24,
+            issuing_authority="IPC",
+        ),
+        Certification(
+            code="CERT-EHS",
+            name="EHS Operator",
+            category="safety",
+            validity_months=12,
+            issuing_authority="Plant Safety Office",
+        ),
+        Certification(
+            code="CERT-FLT",
+            name="Forklift License",
+            category="equipment",
+            validity_months=36,
+            issuing_authority="Logistics Authority",
+        ),
+    ]
+    session.add_all(certifications)
+    session.flush()
+    return {cert.code: cert for cert in certifications}
+
+
+def seed_safety_trainings(
+    session, skills: dict[str, Skill], certifications: dict[str, Certification]
+) -> dict[str, SafetyTraining]:
+    trainings = [
+        SafetyTraining(
+            code="SAFE-LOCKOUT",
+            title="Lockout Tagout",
+            category="safety",
+            required_hours=4.0,
+            validity_months=12,
+        ),
+        SafetyTraining(
+            code="SAFE-ESD",
+            title="ESD Handling",
+            category="quality",
+            skill_id=skills["SMT"].id,
+            required_hours=2.0,
+            validity_months=12,
+        ),
+        SafetyTraining(
+            code="SAFE-FLT",
+            title="Forklift Refresher",
+            category="equipment",
+            required_certification_id=certifications["CERT-FLT"].id,
+            required_hours=3.0,
+            validity_months=12,
+        ),
+    ]
+    session.add_all(trainings)
+    session.flush()
+    return {training.code: training for training in trainings}
+
+
+def seed_workers(session, units: dict[str, OrganizationUnit]) -> dict[str, Worker]:
+    workers = [
+        Worker(
+            worker_code="W001",
+            full_name="Liu Mei",
+            employment_type="full_time",
+            status="active",
+            organization_unit_id=units["MFG"].id,
+            hire_date=TODAY - timedelta(days=820),
+            base_salary=7800,
+        ),
+        Worker(
+            worker_code="W002",
+            full_name="Chen Hao",
+            employment_type="full_time",
+            status="active",
+            organization_unit_id=units["MFG"].id,
+            hire_date=TODAY - timedelta(days=640),
+            base_salary=7200,
+        ),
+        Worker(
+            worker_code="W003",
+            full_name="Zhang Yu",
+            employment_type="full_time",
+            status="active",
+            organization_unit_id=units["QA"].id,
+            hire_date=TODAY - timedelta(days=900),
+            base_salary=8600,
+        ),
+        Worker(
+            worker_code="W004",
+            full_name="Lin Qiao",
+            employment_type="full_time",
+            status="active",
+            organization_unit_id=units["ENG"].id,
+            hire_date=TODAY - timedelta(days=1100),
+            base_salary=9800,
+        ),
+        Worker(
+            worker_code="W005",
+            full_name="Tang Wei",
+            employment_type="full_time",
+            status="active",
+            organization_unit_id=units["WH"].id,
+            hire_date=TODAY - timedelta(days=500),
+            base_salary=6800,
+        ),
+        Worker(
+            worker_code="W006",
+            full_name="Sun Jia",
+            employment_type="contractor",
+            status="active",
+            organization_unit_id=units["MFG"].id,
+            hire_date=TODAY - timedelta(days=230),
+            base_salary=6500,
+        ),
+    ]
+    session.add_all(workers)
     session.flush()
 
-    for dept in session.query(Department).all():
-        dept_ids[dept.name] = dept.id
-    return dept_ids
-
-
-def seed_employees(session, dept_ids: dict[str, int]) -> list[dict]:
-    """创建员工，返回 [{id, name, department_id, salary}, ...]"""
-    name_idx = 0
-    employees = []
-
-    for dept_name, count in DEPT_EMPLOYEE_COUNTS.items():
-        salary_lo, salary_hi = DEPT_SALARY_RANGES[dept_name]
-        for _ in range(count):
-            if name_idx >= len(EMPLOYEE_NAMES):
-                break
-            name = EMPLOYEE_NAMES[name_idx]
-            name_idx += 1
-            salary = round(random.uniform(salary_lo, salary_hi), 2)
-            emp = Employee(
-                name=name,
-                department_id=dept_ids[dept_name],
-                salary=salary,
-            )
-            session.add(emp)
-            employees.append({"name": name, "dept_name": dept_name, "salary": salary})
-
+    units["PLANT-SZ"].manager_worker_id = workers[3].id
+    units["MFG"].manager_worker_id = workers[0].id
+    units["QA"].manager_worker_id = workers[2].id
+    units["ENG"].manager_worker_id = workers[3].id
+    units["WH"].manager_worker_id = workers[4].id
     session.flush()
 
-    # 重新读取以获取自增 id
-    emp_records = session.query(Employee).all()
-    for i, emp in enumerate(emp_records):
-        employees[i]["id"] = emp.id
-        employees[i]["department_id"] = emp.department_id
-
-    return employees
+    return {worker.worker_code: worker for worker in workers}
 
 
-def seed_attendance(session, employees: list[dict]):
-    """为每位员工生成近 30 个工作日的考勤记录"""
-    today = date.today()
-    work_dates = []
-    d = today - timedelta(days=44)  # 往前多取一些，跳过周末后约 30 个工作日
-    while d <= today:
-        if d.weekday() < 5:  # 周一到周五
-            work_dates.append(d)
-        d += timedelta(days=1)
-    work_dates = work_dates[-30:]  # 取最近 30 个工作日
+def seed_worker_profiles(
+    session,
+    workers: dict[str, Worker],
+    skills: dict[str, Skill],
+    certifications: dict[str, Certification],
+    trainings: dict[str, SafetyTraining],
+) -> None:
+    worker_skills = [
+        WorkerSkill(
+            worker_id=workers["W001"].id,
+            skill_id=skills["SMT"].id,
+            proficiency_level="advanced",
+            years_of_experience=4.5,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W001"].id,
+            skill_id=skills["ASSY"].id,
+            proficiency_level="advanced",
+            years_of_experience=5.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W002"].id,
+            skill_id=skills["ASSY"].id,
+            proficiency_level="intermediate",
+            years_of_experience=2.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W002"].id,
+            skill_id=skills["TEST"].id,
+            proficiency_level="intermediate",
+            years_of_experience=1.5,
+            validated=False,
+        ),
+        WorkerSkill(
+            worker_id=workers["W003"].id,
+            skill_id=skills["IPC610"].id,
+            proficiency_level="expert",
+            years_of_experience=6.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W003"].id,
+            skill_id=skills["TEST"].id,
+            proficiency_level="advanced",
+            years_of_experience=4.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W004"].id,
+            skill_id=skills["PLC"].id,
+            proficiency_level="advanced",
+            years_of_experience=7.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W004"].id,
+            skill_id=skills["MES"].id,
+            proficiency_level="advanced",
+            years_of_experience=5.5,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W005"].id,
+            skill_id=skills["FORK"].id,
+            proficiency_level="advanced",
+            years_of_experience=3.0,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W005"].id,
+            skill_id=skills["WMS"].id,
+            proficiency_level="intermediate",
+            years_of_experience=3.5,
+            validated=True,
+        ),
+        WorkerSkill(
+            worker_id=workers["W006"].id,
+            skill_id=skills["SMT"].id,
+            proficiency_level="beginner",
+            years_of_experience=0.8,
+            validated=False,
+        ),
+    ]
+    session.add_all(worker_skills)
 
-    for emp in employees:
-        for d in work_dates:
-            # 10% 概率缺勤
-            if random.random() < 0.10:
-                continue
+    worker_certifications = [
+        WorkerCertification(
+            worker_id=workers["W003"].id,
+            certification_id=certifications["CERT-IPC"].id,
+            certification_number="IPC-2024-003",
+            issued_at=TODAY - timedelta(days=280),
+            expires_at=TODAY + timedelta(days=450),
+            status="valid",
+        ),
+        WorkerCertification(
+            worker_id=workers["W005"].id,
+            certification_id=certifications["CERT-FLT"].id,
+            certification_number="FLT-2025-014",
+            issued_at=TODAY - timedelta(days=150),
+            expires_at=TODAY + timedelta(days=900),
+            status="valid",
+        ),
+        WorkerCertification(
+            worker_id=workers["W001"].id,
+            certification_id=certifications["CERT-EHS"].id,
+            certification_number="EHS-2025-102",
+            issued_at=TODAY - timedelta(days=120),
+            expires_at=TODAY + timedelta(days=240),
+            status="valid",
+        ),
+    ]
+    session.add_all(worker_certifications)
 
-            # 生成签到时间：8:30 ± 30min
-            check_in = random_time_around(8, 30, 30)
+    worker_training_records = [
+        WorkerSafetyTraining(
+            worker_id=workers["W001"].id,
+            safety_training_id=trainings["SAFE-LOCKOUT"].id,
+            completed_at=TODAY - timedelta(days=45),
+            expires_at=TODAY + timedelta(days=320),
+            score=92,
+            status="valid",
+        ),
+        WorkerSafetyTraining(
+            worker_id=workers["W003"].id,
+            safety_training_id=trainings["SAFE-ESD"].id,
+            completed_at=TODAY - timedelta(days=60),
+            expires_at=TODAY + timedelta(days=300),
+            score=96,
+            status="valid",
+        ),
+        WorkerSafetyTraining(
+            worker_id=workers["W005"].id,
+            safety_training_id=trainings["SAFE-FLT"].id,
+            completed_at=TODAY - timedelta(days=30),
+            expires_at=TODAY + timedelta(days=330),
+            score=88,
+            status="valid",
+        ),
+    ]
+    session.add_all(worker_training_records)
 
-            # 5% 概率只有签到无签退
-            if random.random() < 0.05:
-                check_out = None
-                status = "normal"
-                work_hours = None
-            else:
-                check_out = random_time_around(18, 0, 45)
-                # 计算工时
-                in_min = check_in.hour * 60 + check_in.minute
-                out_min = check_out.hour * 60 + check_out.minute
-                work_hours = round((out_min - in_min) / 60, 1)
-                # 判断状态
-                is_late = check_in > time(9, 0)
-                is_early = check_out < time(18, 0)
-                if is_late:
-                    status = "late"
-                elif is_early:
-                    status = "early_leave"
-                else:
-                    status = "normal"
-
-            record = Attendance(
-                employee_id=emp["id"],
-                date=d,
-                check_in=check_in,
-                check_out=check_out,
-                status=status,
-                work_hours=work_hours,
-            )
-            session.add(record)
+    equipment_authorizations = [
+        EquipmentAuthorization(
+            worker_id=workers["W001"].id,
+            equipment_code="SMT-LINE-01",
+            authorization_level="operator",
+            issued_at=TODAY - timedelta(days=180),
+            expires_at=TODAY + timedelta(days=365),
+            status="valid",
+        ),
+        EquipmentAuthorization(
+            worker_id=workers["W005"].id,
+            equipment_code="FORKLIFT-A",
+            authorization_level="advanced",
+            issued_at=TODAY - timedelta(days=150),
+            expires_at=TODAY + timedelta(days=800),
+            status="valid",
+        ),
+    ]
+    session.add_all(equipment_authorizations)
+    session.flush()
 
 
-def seed_leaves(session, employees: list[dict]):
-    """为部分员工生成请假记录"""
-    today = date.today()
+def seed_shopfloor(
+    session,
+    units: dict[str, OrganizationUnit],
+    workers: dict[str, Worker],
+    skills: dict[str, Skill],
+    certifications: dict[str, Certification],
+):
+    line = ProductionLine(
+        organization_unit_id=units["MFG"].id,
+        code="LINE-1",
+        name="SMT Line 1",
+        supervisor_worker_id=workers["W001"].id,
+        status="active",
+    )
+    session.add(line)
+    session.flush()
 
-    for emp in employees:
-        # 每位员工 0~3 条请假
-        leave_count = random.randint(0, 3)
-        for _ in range(leave_count):
-            leave_type, leave_type_name = random.choice(LEAVE_TYPES)
-            reason = random.choice(LEAVE_REASONS[leave_type])
+    team = ProductionTeam(
+        production_line_id=line.id,
+        code="TEAM-A",
+        name="Team A",
+        leader_worker_id=workers["W002"].id,
+        shift_pattern="2_shift",
+        status="active",
+    )
+    session.add(team)
+    session.flush()
 
-            # 随机生成最近 60 天内的请假
-            start_offset = random.randint(1, 60)
-            start_date = today - timedelta(days=start_offset)
-            days = random.randint(1, 5)
-            end_date = start_date + timedelta(days=days - 1)
+    workstations = [
+        Workstation(
+            production_line_id=line.id,
+            code="WS-SMT-01",
+            name="SMT Loader",
+            workstation_type="smt",
+            risk_level="medium",
+            status="active",
+        ),
+        Workstation(
+            production_line_id=line.id,
+            code="WS-ASSY-01",
+            name="Assembly Bench",
+            workstation_type="assembly",
+            risk_level="low",
+            status="active",
+        ),
+        Workstation(
+            production_line_id=line.id,
+            code="WS-QA-01",
+            name="QA Inspection",
+            workstation_type="inspection",
+            risk_level="medium",
+            status="active",
+        ),
+    ]
+    session.add_all(workstations)
+    session.flush()
 
-            # 确保不超过今天
-            if end_date > today:
-                end_date = today
-                days = (end_date - start_date).days + 1
+    session.add_all(
+        [
+            WorkstationSkillRequirement(
+                workstation_id=workstations[0].id, skill_id=skills["SMT"].id, required_proficiency="intermediate"
+            ),
+            WorkstationSkillRequirement(
+                workstation_id=workstations[1].id, skill_id=skills["ASSY"].id, required_proficiency="intermediate"
+            ),
+            WorkstationSkillRequirement(
+                workstation_id=workstations[2].id, skill_id=skills["IPC610"].id, required_proficiency="advanced"
+            ),
+            WorkstationCertificationRequirement(
+                workstation_id=workstations[2].id, certification_id=certifications["CERT-IPC"].id
+            ),
+            WorkstationEquipmentRequirement(
+                workstation_id=workstations[0].id, equipment_code="SMT-LINE-01", required_authorization_level="operator"
+            ),
+        ]
+    )
 
-            status = random.choice(LEAVE_STATUSES)
-            approver = None
-            approved_at = None
-            if status == "approved":
-                approver = random.choice(["王建国", "刘芳", "李明辉"])
-                approved_at = datetime(
-                    start_date.year,
-                    start_date.month,
-                    start_date.day,
-                    random.randint(8, 17),
-                    random.randint(0, 59),
+    assignments = [
+        WorkerAssignment(
+            worker_id=workers["W001"].id,
+            organization_unit_id=units["MFG"].id,
+            production_line_id=line.id,
+            production_team_id=team.id,
+            role_title="Line Supervisor",
+            assignment_type="primary",
+            status="active",
+            start_date=TODAY - timedelta(days=120),
+            is_primary=True,
+        ),
+        WorkerAssignment(
+            worker_id=workers["W002"].id,
+            organization_unit_id=units["MFG"].id,
+            production_line_id=line.id,
+            production_team_id=team.id,
+            role_title="Assembler",
+            assignment_type="primary",
+            status="active",
+            start_date=TODAY - timedelta(days=100),
+            is_primary=True,
+        ),
+        WorkerAssignment(
+            worker_id=workers["W003"].id,
+            organization_unit_id=units["QA"].id,
+            production_line_id=line.id,
+            production_team_id=team.id,
+            role_title="QA Inspector",
+            assignment_type="shared",
+            status="active",
+            start_date=TODAY - timedelta(days=90),
+            is_primary=False,
+        ),
+        WorkerAssignment(
+            worker_id=workers["W006"].id,
+            organization_unit_id=units["MFG"].id,
+            production_line_id=line.id,
+            production_team_id=team.id,
+            role_title="SMT Operator",
+            assignment_type="primary",
+            status="active",
+            start_date=TODAY - timedelta(days=45),
+            is_primary=True,
+        ),
+    ]
+    session.add_all(assignments)
+    session.flush()
+
+    return line, team, workstations
+
+
+def seed_orders_and_shifts(session, line: ProductionLine, workstations: list[Workstation], workers: dict[str, Worker]):
+    order = ProductionOrder(
+        order_number="MO-20260518-001",
+        production_line_id=line.id,
+        product_code="PCB-CTRL-01",
+        product_name="Controller Board",
+        planned_quantity=1200,
+        planned_start_date=TODAY,
+        planned_end_date=TODAY + timedelta(days=3),
+        priority="high",
+        status="released",
+    )
+    session.add(order)
+
+    templates = [
+        ShiftTemplate(
+            code="DAY",
+            name="Day Shift",
+            shift_type="day",
+            start_time=time(8, 0),
+            end_time=time(16, 0),
+            allowance_rate=0.0,
+            status="active",
+        ),
+        ShiftTemplate(
+            code="NIGHT",
+            name="Night Shift",
+            shift_type="night",
+            start_time=time(20, 0),
+            end_time=time(4, 0),
+            allowance_rate=0.2,
+            status="active",
+        ),
+    ]
+    session.add_all(templates)
+    session.flush()
+
+    operations = [
+        ProductionOperation(
+            production_order_id=order.id,
+            workstation_id=workstations[0].id,
+            operation_code="OP-SMT",
+            operation_name="SMT Placement",
+            sequence_number=10,
+            planned_hours=16.0,
+            required_headcount=2,
+            status="ready",
+        ),
+        ProductionOperation(
+            production_order_id=order.id,
+            workstation_id=workstations[1].id,
+            operation_code="OP-ASSY",
+            operation_name="Final Assembly",
+            sequence_number=20,
+            planned_hours=12.0,
+            required_headcount=2,
+            status="planned",
+        ),
+        ProductionOperation(
+            production_order_id=order.id,
+            workstation_id=workstations[2].id,
+            operation_code="OP-QA",
+            operation_name="Final Inspection",
+            sequence_number=30,
+            planned_hours=8.0,
+            required_headcount=1,
+            status="planned",
+        ),
+    ]
+    session.add_all(operations)
+
+    day_template = next(template for template in templates if template.code == "DAY")
+    plan = ShiftPlan(
+        production_order_id=order.id,
+        production_line_id=line.id,
+        shift_template_id=day_template.id,
+        work_date=TODAY,
+        required_headcount=4,
+        status="published",
+        created_by="scheduler.bot",
+    )
+    session.add(plan)
+    session.flush()
+
+    shift_assignments = [
+        ShiftAssignment(
+            shift_plan_id=plan.id,
+            worker_id=workers["W001"].id,
+            workstation_id=workstations[0].id,
+            assignment_type="primary",
+            status="scheduled",
+            assigned_role="Supervisor",
+        ),
+        ShiftAssignment(
+            shift_plan_id=plan.id,
+            worker_id=workers["W002"].id,
+            workstation_id=workstations[1].id,
+            assignment_type="primary",
+            status="scheduled",
+            assigned_role="Assembler",
+        ),
+        ShiftAssignment(
+            shift_plan_id=plan.id,
+            worker_id=workers["W003"].id,
+            workstation_id=workstations[2].id,
+            assignment_type="shared",
+            status="scheduled",
+            assigned_role="Inspector",
+        ),
+        ShiftAssignment(
+            shift_plan_id=plan.id,
+            worker_id=workers["W006"].id,
+            workstation_id=workstations[0].id,
+            assignment_type="primary",
+            status="scheduled",
+            assigned_role="Operator",
+        ),
+    ]
+    session.add_all(shift_assignments)
+    session.flush()
+
+    return order, plan, shift_assignments
+
+
+def seed_attendance(session, workers: dict[str, Worker]) -> None:
+    records = []
+    for offset in range(5):
+        work_day = TODAY - timedelta(days=offset)
+        for worker_code in ["W001", "W002", "W003", "W004", "W005", "W006"]:
+            records.append(
+                AttendanceRecord(
+                    worker_id=workers[worker_code].id,
+                    work_date=work_day,
+                    check_in_time=time(8, random.randint(0, 12)),
+                    check_out_time=time(17, random.randint(0, 25)),
+                    status="present",
+                    work_hours=8.0,
                 )
-
-            record = Leave(
-                employee_id=emp["id"],
-                leave_type=leave_type,
-                leave_type_name=leave_type_name,
-                start_date=start_date,
-                end_date=end_date,
-                days=days,
-                reason=reason,
-                status=status,
-                approver=approver,
-                approved_at=approved_at,
-                created_at=datetime(
-                    start_date.year,
-                    start_date.month,
-                    start_date.day,
-                    random.randint(8, 12),
-                    random.randint(0, 59),
-                ),
             )
-            session.add(record)
+    session.add_all(records)
 
+    leave = LeaveRequest(
+        worker_id=workers["W005"].id,
+        leave_type="annual",
+        leave_type_name="Annual Leave",
+        start_date=TODAY + timedelta(days=7),
+        end_date=TODAY + timedelta(days=8),
+        requested_days=2,
+        reason="Family trip",
+        status="approved",
+        approver_name="Lin Qiao",
+        approved_at=TODAY,
+    )
+    session.add(leave)
 
-def seed_payrolls(session, employees: list[dict]):
-    """为每位员工生成近 3 个月的薪资记录"""
-    today = date.today()
-    months = []
-    for i in range(1, 4):
-        m = today.month - i
-        y = today.year
-        while m <= 0:
-            m += 12
-            y -= 1
-        months.append(f"{y:04d}-{m:02d}")
-    months.reverse()
-
-    for emp in employees:
-        base = emp["salary"]
-        for month in months:
-            # 奖金：0 ~ 30% 底薪
-            bonuses = round(random.uniform(0, base * 0.3), 2)
-            # 扣款：0 ~ 10% 底薪
-            deductions = round(random.uniform(0, base * 0.1), 2)
-            net_salary = round(base + bonuses - deductions, 2)
-
-            # 支付日期：次月 10 号
-            year, mon = month.split("-")
-            pay_year, pay_mon = int(year), int(mon) + 1
-            if pay_mon > 12:
-                pay_mon = 1
-                pay_year += 1
-            payment_date = date(pay_year, pay_mon, 10)
-
-            # 最近的月份可能还没发
-            if month == months[-1] and random.random() < 0.3:
-                status = "pending"
-                payment_date = None
-            else:
-                status = "paid"
-
-            record = Payroll(
-                employee_id=emp["id"],
-                month=month,
-                base_salary=base,
-                bonuses=bonuses,
-                deductions=deductions,
-                net_salary=net_salary,
-                status=status,
-                payment_date=payment_date,
-                created_at=datetime.now() - timedelta(days=random.randint(1, 90)),
+    payrolls = []
+    for worker in workers.values():
+        bonuses = 300 if worker.worker_code in {"W001", "W003", "W004"} else 120
+        deductions = 80 if worker.worker_code == "W006" else 0
+        base_salary = float(worker.base_salary or 0)
+        payrolls.append(
+            PayrollRecord(
+                worker_id=worker.id,
+                pay_period="2026-05",
+                base_salary=base_salary,
+                bonuses=float(bonuses),
+                deductions=float(deductions),
+                net_salary=base_salary + bonuses - deductions,
+                status="processed",
+                payment_date=TODAY + timedelta(days=12),
             )
-            session.add(record)
-
-
-def seed_skills(session, employees: list[dict], catalog_ids: dict[str, int]):
-    """为每位员工生成 2~4 项技能"""
-    for emp in employees:
-        dept_name = emp["dept_name"]
-        dept_skills = DEPT_SKILLS.get(dept_name, [])
-        if not dept_skills:
-            continue
-
-        # 每位员工随机分配 2~4 项技能
-        skill_count = min(random.randint(2, 4), len(dept_skills))
-        chosen = random.sample(dept_skills, skill_count)
-
-        for skill_data in chosen:
-            # 随机调整熟练程度（与模板有差异）
-            level = skill_data["proficiency_level"]
-            level_idx = PROFICIENCY_LEVELS.index(level)
-            level_idx = max(0, min(len(PROFICIENCY_LEVELS) - 1, level_idx + random.randint(-1, 1)))
-            proficiency = PROFICIENCY_LEVELS[level_idx]
-
-            # 随机生成年限
-            years = round(random.uniform(0.5, 10.0), 1)
-            if proficiency == "beginner":
-                years = round(random.uniform(0.5, 2.0), 1)
-            elif proficiency == "expert":
-                years = round(random.uniform(5.0, 15.0), 1)
-
-            # 保留模板中的认证，或随机清除
-            cert = skill_data["certification"]
-            if cert and random.random() < 0.4:
-                cert = None
-
-            skill_name = skill_data["skill_name"]
-            record = EmployeeSkill(
-                employee_id=emp["id"],
-                skill_name=skill_name,
-                skill_id=catalog_ids.get(skill_name),
-                proficiency_level=proficiency,
-                years_of_experience=years,
-                certification=cert,
-                created_at=datetime.now() - timedelta(days=random.randint(30, 365)),
-            )
-            session.add(record)
-
-
-def seed_skill_catalog(session) -> dict[str, int]:
-    """创建技能目录，返回 {技能名称: id}"""
-    catalog_ids = {}
-    # 收集所有唯一技能
-    all_skills = {}
-    for dept_skills in DEPT_SKILLS.values():
-        for s in dept_skills:
-            name = s["skill_name"]
-            if name not in all_skills:
-                all_skills[name] = SKILL_CATEGORIES.get(name)
-
-    for name, category in all_skills.items():
-        record = SkillCatalog(
-            name=name,
-            category=category,
-            created_at=datetime.now() - timedelta(days=random.randint(60, 365)),
         )
-        session.add(record)
-
+    session.add_all(payrolls)
     session.flush()
-    for sc in session.query(SkillCatalog).all():
-        catalog_ids[sc.name] = sc.id
-    return catalog_ids
 
 
-def seed_projects(session, employees: list[dict], catalog_ids: dict[str, int]):
-    """创建项目、技能需求、成员和工时记录"""
-    project_ids = []
-    for pd in PROJECTS_DATA:
-        project = Project(
-            **pd,
-            created_at=datetime.now() - timedelta(days=random.randint(30, 90)),
-        )
-        session.add(project)
-
-    session.flush()
-    for p in session.query(Project).all():
-        project_ids.append(p.id)
-
-    # 项目1: 智能质检系统 - 需要Python、嵌入式开发、IPC-A-610检验
-    req_data_1 = [
-        {"skill_id": catalog_ids["Python"], "required_proficiency": "advanced", "person_days": 30.0, "headcount": 2},
-        {
-            "skill_id": catalog_ids["嵌入式开发"],
-            "required_proficiency": "advanced",
-            "person_days": 25.0,
-            "headcount": 2,
-        },
-        {
-            "skill_id": catalog_ids["IPC-A-610检验"],
-            "required_proficiency": "intermediate",
-            "person_days": 15.0,
-            "headcount": 1,
-        },
+def seed_projects(session, workers: dict[str, Worker], skills: dict[str, Skill]) -> None:
+    projects = [
+        Project(
+            code="PRJ-MES-01",
+            name="MES Rollout",
+            status="active",
+            start_date=TODAY - timedelta(days=40),
+            end_date=TODAY + timedelta(days=60),
+            description="Connect staffing and shopfloor execution data.",
+        ),
+        Project(
+            code="PRJ-QA-02",
+            name="Inspection Upgrade",
+            status="planning",
+            start_date=TODAY - timedelta(days=10),
+            end_date=TODAY + timedelta(days=45),
+            description="Raise outbound quality coverage.",
+        ),
     ]
-    req_ids_1 = []
-    for rd in req_data_1:
-        req = ProjectSkillRequirement(
-            project_id=project_ids[0],
-            **rd,
-            created_at=datetime.now() - timedelta(days=random.randint(20, 60)),
-        )
-        session.add(req)
+    session.add_all(projects)
     session.flush()
-    for r in session.query(ProjectSkillRequirement).filter_by(project_id=project_ids[0]).all():
-        req_ids_1.append(r.id)
 
-    # 项目1成员: 选研发部和品质部员工
-    dev_employees = [e for e in employees if e["dept_name"] == "研发部"][:4]
-    qa_employees = [e for e in employees if e["dept_name"] == "品质部"][:2]
-    member_roles = ["算法工程师", "嵌入式工程师", "测试工程师", "前端开发", "品质顾问", "品质验证"]
-    member_list = dev_employees + qa_employees
-    member_ids_1 = []
-    for i, emp in enumerate(member_list):
-        member = ProjectMember(
-            project_id=project_ids[0],
-            employee_id=emp["id"],
-            role=member_roles[i] if i < len(member_roles) else "成员",
-            assigned_date=date(2026, 3, 1),
-            created_at=datetime.now() - timedelta(days=random.randint(20, 50)),
-        )
-        session.add(member)
+    members = [
+        ProjectMember(
+            project_id=projects[0].id,
+            worker_id=workers["W004"].id,
+            role_name="Tech Lead",
+            assigned_date=TODAY - timedelta(days=35),
+            allocation_percent=60,
+        ),
+        ProjectMember(
+            project_id=projects[0].id,
+            worker_id=workers["W003"].id,
+            role_name="QA Lead",
+            assigned_date=TODAY - timedelta(days=35),
+            allocation_percent=40,
+        ),
+        ProjectMember(
+            project_id=projects[1].id,
+            worker_id=workers["W001"].id,
+            role_name="Manufacturing SME",
+            assigned_date=TODAY - timedelta(days=8),
+            allocation_percent=30,
+        ),
+    ]
+    session.add_all(members)
+
+    requirements = [
+        ProjectSkillRequirement(
+            project_id=projects[0].id,
+            skill_id=skills["MES"].id,
+            required_proficiency="advanced",
+            person_days=25.0,
+            headcount=1,
+        ),
+        ProjectSkillRequirement(
+            project_id=projects[0].id,
+            skill_id=skills["PLC"].id,
+            required_proficiency="intermediate",
+            person_days=18.0,
+            headcount=1,
+        ),
+        ProjectSkillRequirement(
+            project_id=projects[1].id,
+            skill_id=skills["IPC610"].id,
+            required_proficiency="advanced",
+            person_days=12.0,
+            headcount=1,
+        ),
+    ]
+    session.add_all(requirements)
     session.flush()
-    for m in session.query(ProjectMember).filter_by(project_id=project_ids[0]).all():
-        member_ids_1.append(m.id)
 
-    # 项目1工时记录
-    for req_idx, req_id in enumerate(req_ids_1):
-        for member_idx, emp in enumerate(member_list[:3]):
-            for day_offset in range(0, random.randint(10, 30)):
-                work_date = date(2026, 4, 1) + timedelta(days=day_offset)
-                if work_date.weekday() >= 5:
-                    continue
-                if work_date > date.today():
-                    continue
-                ts = ProjectTimesheet(
-                    project_id=project_ids[0],
-                    requirement_id=req_id,
-                    employee_id=emp["id"],
-                    date=work_date,
-                    hours=round(random.uniform(4, 8), 1),
-                    description="项目开发工作",
-                    created_at=datetime.now() - timedelta(days=random.randint(1, 30)),
-                )
-                session.add(ts)
-
-    # 项目2: MES系统集成 - 需要C/C++、PLC编程、ERP系统操作
-    req_data_2 = [
-        {"skill_id": catalog_ids["C/C++"], "required_proficiency": "advanced", "person_days": 20.0, "headcount": 2},
-        {"skill_id": catalog_ids["PLC编程"], "required_proficiency": "advanced", "person_days": 25.0, "headcount": 1},
-        {
-            "skill_id": catalog_ids["ERP系统操作"],
-            "required_proficiency": "intermediate",
-            "person_days": 10.0,
-            "headcount": 1,
-        },
+    timesheets = [
+        ProjectTimesheetEntry(
+            project_id=projects[0].id,
+            project_skill_requirement_id=requirements[0].id,
+            worker_id=workers["W004"].id,
+            work_date=TODAY - timedelta(days=2),
+            hours=6.0,
+            description="MES configuration workshop",
+        ),
+        ProjectTimesheetEntry(
+            project_id=projects[0].id,
+            project_skill_requirement_id=requirements[1].id,
+            worker_id=workers["W004"].id,
+            work_date=TODAY - timedelta(days=1),
+            hours=4.0,
+            description="PLC interface review",
+        ),
+        ProjectTimesheetEntry(
+            project_id=projects[1].id,
+            project_skill_requirement_id=requirements[2].id,
+            worker_id=workers["W003"].id,
+            work_date=TODAY - timedelta(days=1),
+            hours=3.5,
+            description="Inspection coverage analysis",
+        ),
     ]
-    for rd in req_data_2:
-        req = ProjectSkillRequirement(
-            project_id=project_ids[1],
-            **rd,
-            created_at=datetime.now() - timedelta(days=random.randint(10, 30)),
-        )
-        session.add(req)
-
-    # 项目2成员
-    eng_employees = [e for e in employees if e["dept_name"] == "工程部"][:2]
-    wh_employees = [e for e in employees if e["dept_name"] == "仓储物流部"][:1]
-    dev2_employees = [e for e in employees if e["dept_name"] == "研发部"][4:6]
-    mes_roles = ["软件工程师", "PLC工程师", "ERP顾问", "C++开发"]
-    mes_members = eng_employees + wh_employees + dev2_employees
-    for i, emp in enumerate(mes_members):
-        member = ProjectMember(
-            project_id=project_ids[1],
-            employee_id=emp["id"],
-            role=mes_roles[i] if i < len(mes_roles) else "成员",
-            assigned_date=date(2026, 4, 15),
-            created_at=datetime.now() - timedelta(days=random.randint(5, 20)),
-        )
-        session.add(member)
-
-    # 项目3: 新产品NPI - 暂无成员和工时（planning状态）
-    req_data_3 = [
-        {
-            "skill_id": catalog_ids["SMT贴片操作"],
-            "required_proficiency": "advanced",
-            "person_days": 20.0,
-            "headcount": 3,
-        },
-        {
-            "skill_id": catalog_ids["波峰焊操作"],
-            "required_proficiency": "intermediate",
-            "person_days": 10.0,
-            "headcount": 2,
-        },
-        {"skill_id": catalog_ids["功能测试"], "required_proficiency": "advanced", "person_days": 15.0, "headcount": 2},
-    ]
-    for rd in req_data_3:
-        req = ProjectSkillRequirement(
-            project_id=project_ids[2],
-            **rd,
-            created_at=datetime.now() - timedelta(days=random.randint(1, 10)),
-        )
-        session.add(req)
+    session.add_all(timesheets)
+    session.flush()
 
 
-def main():
-    random.seed(42)  # 固定种子保证可复现
+def seed_risks(
+    session,
+    order: ProductionOrder,
+    line: ProductionLine,
+    workstations: list[Workstation],
+    shift_assignments: list[ShiftAssignment],
+    workers: dict[str, Worker],
+) -> None:
+    signal = OperationalRiskSignal(
+        production_order_id=order.id,
+        worker_id=workers["W006"].id,
+        production_line_id=line.id,
+        workstation_id=workstations[0].id,
+        shift_assignment_id=shift_assignments[3].id,
+        signal_type="training_gap",
+        severity="medium",
+        status="open",
+        detected_by="system",
+        evidence="Operator assigned to SMT station with beginner proficiency and pending validation.",
+    )
+    session.add(signal)
+    session.flush()
 
-    # 确保所有表存在
-    Base.metadata.create_all(bind=engine)
+    review = OperationalRiskReview(
+        risk_signal_id=signal.id,
+        reviewer_name="Liu Mei",
+        conclusion="Keep worker paired with supervisor until validation is complete.",
+        action_suggestion="Schedule skills validation this week and keep dual coverage for the SMT station.",
+        review_status="completed",
+    )
+    session.add(review)
+    session.flush()
+
+
+def main() -> None:
+    random.seed(42)
     initialize_database()
 
     with SessionLocal() as session:
-        # 清空所有表
-        for table in reversed(Base.metadata.sorted_tables):
-            session.execute(table.delete())
+        reset_database(session)
 
-        print("正在创建部门...")
-        dept_ids = seed_departments(session)
-
-        print("正在创建员工...")
-        employees = seed_employees(session, dept_ids)
-        print(f"  共创建 {len(employees)} 名员工")
-
-        print("正在创建技能目录...")
-        catalog_ids = seed_skill_catalog(session)
-        print(f"  共创建 {len(catalog_ids)} 项技能")
-
-        print("正在生成考勤记录...")
-        seed_attendance(session, employees)
-
-        print("正在生成请假记录...")
-        seed_leaves(session, employees)
-
-        print("正在生成薪资记录...")
-        seed_payrolls(session, employees)
-
-        print("正在生成员工技能记录...")
-        seed_skills(session, employees, catalog_ids)
-
-        print("正在生成项目数据...")
-        seed_projects(session, employees, catalog_ids)
-
+        units = seed_organization(session)
+        skills = seed_skills(session)
+        certifications = seed_certifications(session)
+        trainings = seed_safety_trainings(session, skills, certifications)
+        workers = seed_workers(session, units)
+        seed_worker_profiles(session, workers, skills, certifications, trainings)
+        line, _team, workstations = seed_shopfloor(session, units, workers, skills, certifications)
+        order, _plan, shift_assignments = seed_orders_and_shifts(session, line, workstations, workers)
+        seed_attendance(session, workers)
+        seed_projects(session, workers, skills)
+        seed_risks(session, order, line, workstations, shift_assignments, workers)
         session.commit()
 
-    # 统计
-    with SessionLocal() as session:
         counts = {
-            "部门": session.query(Department).count(),
-            "员工": session.query(Employee).count(),
-            "技能目录": session.query(SkillCatalog).count(),
-            "考勤": session.query(Attendance).count(),
-            "请假": session.query(Leave).count(),
-            "薪资": session.query(Payroll).count(),
-            "员工技能": session.query(EmployeeSkill).count(),
-            "项目": session.query(Project).count(),
-            "技能需求": session.query(ProjectSkillRequirement).count(),
-            "项目成员": session.query(ProjectMember).count(),
-            "工时记录": session.query(ProjectTimesheet).count(),
+            "organization_units": session.query(OrganizationUnit).count(),
+            "workers": session.query(Worker).count(),
+            "skills": session.query(Skill).count(),
+            "certifications": session.query(Certification).count(),
+            "workstations": session.query(Workstation).count(),
+            "shift_assignments": session.query(ShiftAssignment).count(),
+            "attendance_records": session.query(AttendanceRecord).count(),
+            "projects": session.query(Project).count(),
+            "risk_signals": session.query(OperationalRiskSignal).count(),
         }
-        print("\n模拟数据创建完成！")
-        for k, v in counts.items():
-            print(f"  {k}: {v} 条")
+
+    print("Sample data seeded into workforce_ops database:")
+    for name, count in counts.items():
+        print(f"  {name}: {count}")
 
 
 if __name__ == "__main__":

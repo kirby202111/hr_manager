@@ -50,14 +50,23 @@ class OrganizationUnit(Base, IdentityMixin, TimestampMixin, DictMixin):
         foreign_keys=[manager_worker_id],
     )
     # 下挂业务实体：人员、任职记录、产线。
-    workers: Mapped[list[Worker]] = relationship("Worker", back_populates="organization_unit")
+    workers: Mapped[list[Worker]] = relationship(
+        "Worker",
+        back_populates="organization_unit",
+        primaryjoin="OrganizationUnit.id == foreign(Worker.organization_unit_id)",
+        foreign_keys="Worker.organization_unit_id",
+    )
     worker_assignments: Mapped[list[WorkerAssignment]] = relationship(
         "WorkerAssignment",
         back_populates="organization_unit",
+        primaryjoin="OrganizationUnit.id == foreign(WorkerAssignment.organization_unit_id)",
+        foreign_keys="WorkerAssignment.organization_unit_id",
     )
     production_lines: Mapped[list[ProductionLine]] = relationship(
         "ProductionLine",
         back_populates="organization_unit",
+        primaryjoin="OrganizationUnit.id == foreign(ProductionLine.organization_unit_id)",
+        foreign_keys="ProductionLine.organization_unit_id",
     )
 
 

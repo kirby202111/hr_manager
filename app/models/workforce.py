@@ -54,56 +54,78 @@ class Worker(Base, IdentityMixin, TimestampMixin, DictMixin):
     assignments: Mapped[list[WorkerAssignment]] = relationship(
         "WorkerAssignment",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(WorkerAssignment.worker_id)",
+        foreign_keys="WorkerAssignment.worker_id",
         cascade="all, delete-orphan",
     )
     skills: Mapped[list[WorkerSkill]] = relationship(
         "WorkerSkill",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(WorkerSkill.worker_id)",
+        foreign_keys="WorkerSkill.worker_id",
         cascade="all, delete-orphan",
     )
     certifications: Mapped[list[WorkerCertification]] = relationship(
         "WorkerCertification",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(WorkerCertification.worker_id)",
+        foreign_keys="WorkerCertification.worker_id",
         cascade="all, delete-orphan",
     )
     safety_trainings: Mapped[list[WorkerSafetyTraining]] = relationship(
         "WorkerSafetyTraining",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(WorkerSafetyTraining.worker_id)",
+        foreign_keys="WorkerSafetyTraining.worker_id",
         cascade="all, delete-orphan",
     )
     equipment_authorizations: Mapped[list[EquipmentAuthorization]] = relationship(
         "EquipmentAuthorization",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(EquipmentAuthorization.worker_id)",
+        foreign_keys="EquipmentAuthorization.worker_id",
         cascade="all, delete-orphan",
     )
     shift_assignments: Mapped[list[ShiftAssignment]] = relationship(
         "ShiftAssignment",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(ShiftAssignment.worker_id)",
+        foreign_keys="ShiftAssignment.worker_id",
         cascade="all, delete-orphan",
     )
     attendance_records: Mapped[list[AttendanceRecord]] = relationship(
         "AttendanceRecord",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(AttendanceRecord.worker_id)",
+        foreign_keys="AttendanceRecord.worker_id",
         cascade="all, delete-orphan",
     )
     leave_requests: Mapped[list[LeaveRequest]] = relationship(
         "LeaveRequest",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(LeaveRequest.worker_id)",
+        foreign_keys="LeaveRequest.worker_id",
         cascade="all, delete-orphan",
     )
     payroll_records: Mapped[list[PayrollRecord]] = relationship(
         "PayrollRecord",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(PayrollRecord.worker_id)",
+        foreign_keys="PayrollRecord.worker_id",
         cascade="all, delete-orphan",
     )
     project_memberships: Mapped[list[ProjectMember]] = relationship(
         "ProjectMember",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(ProjectMember.worker_id)",
+        foreign_keys="ProjectMember.worker_id",
         cascade="all, delete-orphan",
     )
     project_timesheet_entries: Mapped[list[ProjectTimesheetEntry]] = relationship(
         "ProjectTimesheetEntry",
         back_populates="worker",
+        primaryjoin="Worker.id == foreign(ProjectTimesheetEntry.worker_id)",
+        foreign_keys="ProjectTimesheetEntry.worker_id",
         cascade="all, delete-orphan",
     )
     raised_risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(

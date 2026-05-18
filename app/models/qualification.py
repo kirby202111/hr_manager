@@ -33,16 +33,22 @@ class Certification(Base, IdentityMixin, TimestampMixin, DictMixin):
     worker_certifications: Mapped[list[WorkerCertification]] = relationship(
         "WorkerCertification",
         back_populates="certification",
+        primaryjoin="Certification.id == foreign(WorkerCertification.certification_id)",
+        foreign_keys="WorkerCertification.certification_id",
         cascade="all, delete-orphan",
     )
     workstation_requirements: Mapped[list[WorkstationCertificationRequirement]] = relationship(
         "WorkstationCertificationRequirement",
         back_populates="certification",
+        primaryjoin="Certification.id == foreign(WorkstationCertificationRequirement.certification_id)",
+        foreign_keys="WorkstationCertificationRequirement.certification_id",
         cascade="all, delete-orphan",
     )
     safety_trainings: Mapped[list[SafetyTraining]] = relationship(
         "SafetyTraining",
         back_populates="required_certification",
+        primaryjoin="Certification.id == foreign(SafetyTraining.required_certification_id)",
+        foreign_keys="SafetyTraining.required_certification_id",
     )
 
 
@@ -106,6 +112,8 @@ class SafetyTraining(Base, IdentityMixin, TimestampMixin, DictMixin):
     worker_records: Mapped[list[WorkerSafetyTraining]] = relationship(
         "WorkerSafetyTraining",
         back_populates="safety_training",
+        primaryjoin="SafetyTraining.id == foreign(WorkerSafetyTraining.safety_training_id)",
+        foreign_keys="WorkerSafetyTraining.safety_training_id",
         cascade="all, delete-orphan",
     )
 

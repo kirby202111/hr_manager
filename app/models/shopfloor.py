@@ -49,29 +49,41 @@ class ProductionLine(Base, IdentityMixin, TimestampMixin, DictMixin):
     teams: Mapped[list[ProductionTeam]] = relationship(
         "ProductionTeam",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(ProductionTeam.production_line_id)",
+        foreign_keys="ProductionTeam.production_line_id",
         cascade="all, delete-orphan",
     )
     workstations: Mapped[list[Workstation]] = relationship(
         "Workstation",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(Workstation.production_line_id)",
+        foreign_keys="Workstation.production_line_id",
         cascade="all, delete-orphan",
     )
     worker_assignments: Mapped[list[WorkerAssignment]] = relationship(
         "WorkerAssignment",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(WorkerAssignment.production_line_id)",
+        foreign_keys="WorkerAssignment.production_line_id",
     )
     shift_plans: Mapped[list[ShiftPlan]] = relationship(
         "ShiftPlan",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(ShiftPlan.production_line_id)",
+        foreign_keys="ShiftPlan.production_line_id",
         cascade="all, delete-orphan",
     )
     production_orders: Mapped[list[ProductionOrder]] = relationship(
         "ProductionOrder",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(ProductionOrder.production_line_id)",
+        foreign_keys="ProductionOrder.production_line_id",
     )
     risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(
         "OperationalRiskSignal",
         back_populates="production_line",
+        primaryjoin="ProductionLine.id == foreign(OperationalRiskSignal.production_line_id)",
+        foreign_keys="OperationalRiskSignal.production_line_id",
     )
 
 
@@ -104,6 +116,8 @@ class ProductionTeam(Base, IdentityMixin, TimestampMixin, DictMixin):
     worker_assignments: Mapped[list[WorkerAssignment]] = relationship(
         "WorkerAssignment",
         back_populates="production_team",
+        primaryjoin="ProductionTeam.id == foreign(WorkerAssignment.production_team_id)",
+        foreign_keys="WorkerAssignment.production_team_id",
     )
 
 
@@ -133,29 +147,41 @@ class Workstation(Base, IdentityMixin, TimestampMixin, DictMixin):
     skill_requirements: Mapped[list[WorkstationSkillRequirement]] = relationship(
         "WorkstationSkillRequirement",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(WorkstationSkillRequirement.workstation_id)",
+        foreign_keys="WorkstationSkillRequirement.workstation_id",
         cascade="all, delete-orphan",
     )
     certification_requirements: Mapped[list[WorkstationCertificationRequirement]] = relationship(
         "WorkstationCertificationRequirement",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(WorkstationCertificationRequirement.workstation_id)",
+        foreign_keys="WorkstationCertificationRequirement.workstation_id",
         cascade="all, delete-orphan",
     )
     equipment_requirements: Mapped[list[WorkstationEquipmentRequirement]] = relationship(
         "WorkstationEquipmentRequirement",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(WorkstationEquipmentRequirement.workstation_id)",
+        foreign_keys="WorkstationEquipmentRequirement.workstation_id",
         cascade="all, delete-orphan",
     )
     operations: Mapped[list[ProductionOperation]] = relationship(
         "ProductionOperation",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(ProductionOperation.workstation_id)",
+        foreign_keys="ProductionOperation.workstation_id",
     )
     shift_assignments: Mapped[list[ShiftAssignment]] = relationship(
         "ShiftAssignment",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(ShiftAssignment.workstation_id)",
+        foreign_keys="ShiftAssignment.workstation_id",
     )
     risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(
         "OperationalRiskSignal",
         back_populates="workstation",
+        primaryjoin="Workstation.id == foreign(OperationalRiskSignal.workstation_id)",
+        foreign_keys="OperationalRiskSignal.workstation_id",
     )
 
 
@@ -253,15 +279,21 @@ class ProductionOrder(Base, IdentityMixin, TimestampMixin, DictMixin):
     operations: Mapped[list[ProductionOperation]] = relationship(
         "ProductionOperation",
         back_populates="production_order",
+        primaryjoin="ProductionOrder.id == foreign(ProductionOperation.production_order_id)",
+        foreign_keys="ProductionOperation.production_order_id",
         cascade="all, delete-orphan",
     )
     shift_plans: Mapped[list[ShiftPlan]] = relationship(
         "ShiftPlan",
         back_populates="production_order",
+        primaryjoin="ProductionOrder.id == foreign(ShiftPlan.production_order_id)",
+        foreign_keys="ShiftPlan.production_order_id",
     )
     risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(
         "OperationalRiskSignal",
         back_populates="production_order",
+        primaryjoin="ProductionOrder.id == foreign(OperationalRiskSignal.production_order_id)",
+        foreign_keys="OperationalRiskSignal.production_order_id",
     )
 
 
@@ -350,6 +382,8 @@ class OperationalRiskSignal(Base, IdentityMixin, TimestampMixin, DictMixin):
     reviews: Mapped[list[OperationalRiskReview]] = relationship(
         "OperationalRiskReview",
         back_populates="risk_signal",
+        primaryjoin="OperationalRiskSignal.id == foreign(OperationalRiskReview.risk_signal_id)",
+        foreign_keys="OperationalRiskReview.risk_signal_id",
         cascade="all, delete-orphan",
     )
 
