@@ -18,10 +18,12 @@ from app.routers import (
     staffing,
     workforce,
 )
+from app.schema import initialize_database
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    initialize_database()
     _app.state.agent, _app.state.skill_registry, _app.state.history_store = create_agent()
     yield
 

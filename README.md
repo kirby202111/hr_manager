@@ -40,10 +40,10 @@ app/
   models/
   repositories/
   routers/
+  schema.py
   schemas/
   services/
 frontend/
-migrations/
 main.py
 ```
 
@@ -91,9 +91,11 @@ Design constraints followed by the implementation:
 
 ```bash
 uv sync --dev
-alembic upgrade head
+uv run python scripts/init_db.py
 uvicorn main:app --reload
 ```
+
+`main.py` will also auto-create any missing tables on startup, so the explicit init script is mainly useful for first-time setup or standalone database preparation.
 
 ### Frontend
 

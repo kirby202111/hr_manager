@@ -8,9 +8,8 @@ from datetime import date, datetime, time, timedelta
 # Ensure project root is on sys.path so `app` is importable
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.database_migration import migrate_schema
-
 from app.database import Base, SessionLocal, engine
+from app.schema import initialize_database
 from app.models import (
     Attendance,
     Department,
@@ -767,7 +766,7 @@ def main():
 
     # 确保所有表存在
     Base.metadata.create_all(bind=engine)
-    migrate_schema()
+    initialize_database()
 
     with SessionLocal() as session:
         # 清空所有表
