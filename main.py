@@ -3,10 +3,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agent.models import *  # noqa: F403 - register agent runtime ORM tables
 from app.agent.router import create_agent
 from app.agent.router import router as agent_router
 from app.errors import AppError, app_error_handler
-from app.models import *  # noqa: F403 — register all ORM tables
+from app.models import *  # noqa: F403 - register business ORM tables
 from app.routers import (
     attendance,
     capability,
@@ -25,7 +26,7 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="员工管理系统 API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="Workforce Ops API", version="2.0.0", lifespan=lifespan)
 
 app.add_exception_handler(AppError, app_error_handler)
 
@@ -50,4 +51,4 @@ app.include_router(agent_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "员工管理系统 API v2.0"}
+    return {"message": "Workforce Ops API v2.0"}

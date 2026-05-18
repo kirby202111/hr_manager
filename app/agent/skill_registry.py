@@ -1,102 +1,66 @@
+"""Agent skill registry."""
+
 from __future__ import annotations
 
-from app.agent.protocol import AgentTool, Skill
+from app.agent.protocol import AgentSkill, AgentTool
 
 
 class SkillRegistry:
+    """Register, discover, and toggle agent skills."""
+
     def __init__(self) -> None:
-        self._skills: dict[str, Skill] = {}
+        self._skills: dict[str, AgentSkill] = {}
         self._tool_to_skill: dict[str, str] = {}
 
-    def register(self, skill: Skill) -> None:
+    def register(self, skill: AgentSkill) -> None:
         if skill.name in self._skills:
             raise ValueError(f"Skill '{skill.name}' already registered")
         for tool in skill.tools:
             if tool.name in self._tool_to_skill:
-                raise ValueError(f"Tool '{tool.name}' already belongs to skill '{self._tool_to_skill[tool.name]}'")
-        for wf_name in skill.workflows:
-            if wf_name in self._tool_to_skill:
-                raise ValueError(
-                    f"Workflow '{wf_name}' conflicts with existing tool/skill name in '{self._tool_to_skill[wf_name]}'"
-                )
+                raise ValueError(f"Tool '{tool.name}' already registered by skill '{self._tool_to_skill[tool.name]}'")
         self._skills[skill.name] = skill
         for tool in skill.tools:
             self._tool_to_skill[tool.name] = skill.name
-        for wf_name in skill.workflows:
-            self._tool_to_skill[wf_name] = skill.name
 
-    def unregister(self, skill_name: str) -> None:
-        skill = self._skills.pop(skill_name, None)
-        if skill:
-            for tool in skill.tools:
-                self._tool_to_skill.pop(tool.name, None)
-            for wf_name in skill.workflows:
-                self._tool_to_skill.pop(wf_name, None)
-
-    def get_skill(self, name: str) -> Skill | None:
+    def get_skill(self, name: str) -> AgentSkill | None:
         return self._skills.get(name)
 
-    def get_skill_for_tool(self, tool_name: str) -> Skill | None:
-        skill_name = self._tool_to_skill.get(tool_name)
-        return self._skills.get(skill_name) if skill_name else None
+    def get_enabled_skills(self) -> list[AgentSkill]:
+        return [skill for skill in self._skills.values() if skill.enabled]
 
     def get_all_tools(self) -> list[AgentTool]:
         tools: list[AgentTool] = []
-        for skill in self._skills.values():
-            if skill.enabled:
-                tools.extend(skill.tools)
+        for skill in self.get_enabled_skills():
+            tools.extend(skill.tools)
         return tools
 
     def get_tool_map(self) -> dict[str, AgentTool]:
-        result: dict[str, AgentTool] = {}
-        for skill in self._skills.values():
-            if skill.enabled:
-                for tool in skill.tools:
-                    result[tool.name] = tool
-        return result
-
-    def get_skill_summaries(self) -> list[dict]:
-        return [s.to_openai_skill_summary() for s in self._skills.values() if s.enabled]
+        return {tool.name: tool for tool in self.get_all_tools()}
 
     def get_tools_for_skills(self, skill_names: list[str]) -> list[AgentTool]:
         tools: list[AgentTool] = []
-        for name in skill_names:
-            skill = self._skills.get(name)
+        for skill_name in skill_names:
+            skill = self._skills.get(skill_name)
             if skill and skill.enabled:
                 tools.extend(skill.tools)
         return tools
 
-    def get_workflows_for_skills(self, skill_names: list[str]) -> dict[str, Skill]:
-        result: dict[str, Skill] = {}
-        for name in skill_names:
-            skill = self._skills.get(name)
-            if skill and skill.enabled and skill.workflows:
-                for wf_name in skill.workflows:
-                    result[wf_name] = skill
-        return result
+    def list_skills(self) -> list[dict]:
+        return [skill.to_summary() for skill in self._skills.values()]
 
     def enable(self, skill_name: str) -> bool:
         skill = self._skills.get(skill_name)
-        if skill:
-            skill.enabled = True
-            return True
-        return False
+        if skill is None:
+            return False
+        skill.enabled = True
+        return True
 
     def disable(self, skill_name: str) -> bool:
         skill = self._skills.get(skill_name)
-        if skill:
-            skill.enabled = False
-            return True
-        return False
+        if skill is None:
+            return False
+        skill.enabled = False
+        return True
 
-    def list_skills(self) -> list[dict]:
-        return [
-            {
-                "name": s.name,
-                "description": s.description,
-                "enabled": s.enabled,
-                "tool_count": len(s.tools),
-                "workflow_count": len(s.workflows),
-            }
-            for s in self._skills.values()
-        ]
+
+__all__ = ["SkillRegistry"]

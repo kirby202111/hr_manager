@@ -1,89 +1,77 @@
-from datetime import date as date_type
+"""Attendance-related agent tools."""
 
-from app.agent.protocol import AgentTool, Skill, _safe
-from app.schemas.attendance import AttendanceCheckIn, AttendanceCheckOut
-from app.services import attendance as attendance_service
+from __future__ import annotations
 
-skill = Skill(
-    name="attendance_management",
-    description="考勤记录与签到签退管理",
-    applicability="用户询问考勤记录、签到签退、考勤统计时使用",
+from app.agent.protocol import AgentSkill, AgentTool, safe_call
+from app.services.attendance import attendance_record as attendance_service
+from app.services.attendance import leave_request as leave_service
+from app.services.attendance import payroll_record as payroll_service
+
+skill = AgentSkill(
+    name="attendance",
+    description="Query attendance, leave, and payroll records.",
+    applicability="Use for time tracking, leave history, attendance anomalies, and payroll status checks.",
+    keywords=("attendance", "leave", "payroll", "考勤", "请假", "薪资", "工资"),
     tools=[
         AgentTool(
-            name="query_attendance",
-            description="查询考勤记录，可按员工ID、起止日期筛选",
+            name="list_attendance_records",
+            description="List attendance records with optional worker, work_date, and status filters.",
             parameters={
                 "type": "object",
                 "properties": {
-                    "employee_id": {"type": "integer", "description": "员工ID（可选）"},
-                    "start_date": {"type": "string", "description": "起始日期，格式YYYY-MM-DD（可选）"},
-                    "end_date": {"type": "string", "description": "结束日期，格式YYYY-MM-DD（可选）"},
+                    "worker_id": {"type": "integer"},
+                    "work_date": {"type": "string"},
+                    "status": {"type": "string"},
                 },
-                "required": [],
             },
-            fn=lambda employee_id=None, start_date=None, end_date=None: _safe(
-                attendance_service.list_attendance,
-                employee_id,
-                date_type.fromisoformat(start_date) if start_date else None,
-                date_type.fromisoformat(end_date) if end_date else None,
+            fn=lambda worker_id=None, work_date=None, status=None: safe_call(
+                attendance_service.list_attendance_records,
+                worker_id,
+                work_date,
+                status,
             ),
         ),
         AgentTool(
-            name="query_attendance_stats",
-            description="查询指定员工在指定时间段的考勤统计（正常、迟到、早退、缺勤天数）",
+            name="list_leave_requests",
+            description="List leave requests with optional worker, status, type, and date-range filters.",
             parameters={
                 "type": "object",
                 "properties": {
-                    "employee_id": {"type": "integer", "description": "员工ID"},
-                    "start_date": {"type": "string", "description": "起始日期，格式YYYY-MM-DD"},
-                    "end_date": {"type": "string", "description": "结束日期，格式YYYY-MM-DD"},
+                    "worker_id": {"type": "integer"},
+                    "status": {"type": "string"},
+                    "leave_type": {"type": "string"},
+                    "start_date": {"type": "string"},
+                    "end_date": {"type": "string"},
                 },
-                "required": ["employee_id", "start_date", "end_date"],
             },
-            fn=lambda employee_id, start_date, end_date: _safe(
-                attendance_service.get_employee_stats,
-                employee_id,
-                date_type.fromisoformat(start_date),
-                date_type.fromisoformat(end_date),
+            fn=lambda worker_id=None, status=None, leave_type=None, start_date=None, end_date=None: safe_call(
+                leave_service.list_leave_requests,
+                worker_id,
+                status,
+                leave_type,
+                start_date,
+                end_date,
             ),
         ),
         AgentTool(
-            name="check_in",
-            description="员工签到打卡",
+            name="list_payroll_records",
+            description="List payroll records with optional worker, pay period, and status filters.",
             parameters={
                 "type": "object",
                 "properties": {
-                    "employee_id": {"type": "integer", "description": "员工ID"},
-                    "date": {"type": "string", "description": "日期，格式YYYY-MM-DD"},
-                    "check_in": {"type": "string", "description": "签到时间，格式HH:MM:SS"},
+                    "worker_id": {"type": "integer"},
+                    "pay_period": {"type": "string"},
+                    "status": {"type": "string"},
                 },
-                "required": ["employee_id", "date", "check_in"],
             },
-            fn=lambda employee_id, date, check_in: _safe(
-                attendance_service.check_in,
-                AttendanceCheckIn(
-                    employee_id=employee_id,
-                    date=date_type.fromisoformat(date),
-                    check_in=check_in,
-                ),
-            ),
-        ),
-        AgentTool(
-            name="check_out",
-            description="员工签退打卡",
-            parameters={
-                "type": "object",
-                "properties": {
-                    "record_id": {"type": "integer", "description": "考勤记录ID"},
-                    "check_out": {"type": "string", "description": "签退时间，格式HH:MM:SS"},
-                },
-                "required": ["record_id", "check_out"],
-            },
-            fn=lambda record_id, check_out: _safe(
-                attendance_service.check_out,
-                record_id,
-                AttendanceCheckOut(check_out=check_out),
+            fn=lambda worker_id=None, pay_period=None, status=None: safe_call(
+                payroll_service.list_payroll_records,
+                worker_id,
+                pay_period,
+                status,
             ),
         ),
     ],
 )
+
+__all__ = ["skill"]
