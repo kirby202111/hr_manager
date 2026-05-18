@@ -13,7 +13,9 @@ from app.models.base import Base, DictMixin, IdentityMixin, TimestampMixin
 ORM_EVAL_HELPERS = {"foreign": foreign}
 
 if TYPE_CHECKING:
-    from app.models.shopfloor import OperationalRiskSignal, ProductionLine, ProductionOrder, Workstation
+    from app.models.production import ProductionOrder
+    from app.models.risk import OperationalRiskSignal
+    from app.models.shopfloor import ProductionLine, Workstation
     from app.models.workforce import Worker
 
 

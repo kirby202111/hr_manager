@@ -185,7 +185,7 @@ agent_memories
 #### `category`
 
 ```python
-{"onboarding", "project", "employee", "analytics", "general"}
+{"onboarding", "employee", "analytics", "general"}
 ```
 
 #### `source`
@@ -644,8 +644,6 @@ class AgentMemory(Base, IdentityMixin, TimestampMixin, DictMixin):
 - `shopfloor`
 - `staffing`
 - `attendance`
-- `collaboration`
-
 这些域才是当前业务 `app/models` 的直接映射对象。
 
 ### 15.3 后续如果重建 agent runtime schema

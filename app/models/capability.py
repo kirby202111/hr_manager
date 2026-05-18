@@ -12,9 +12,7 @@ from app.models.base import Base, DictMixin, IdentityMixin, TimestampMixin
 ORM_EVAL_HELPERS = {"foreign": foreign}
 
 if TYPE_CHECKING:
-    from app.models.collaboration import ProjectSkillRequirement
-    from app.models.qualification import SafetyTraining
-    from app.models.shopfloor import WorkstationSkillRequirement
+    from app.models.qualification import SafetyTraining, WorkstationSkillRequirement
     from app.models.workforce import Worker
 
 
@@ -41,13 +39,6 @@ class Skill(Base, IdentityMixin, TimestampMixin, DictMixin):
         back_populates="skill",
         primaryjoin="Skill.id == foreign(WorkstationSkillRequirement.skill_id)",
         foreign_keys="WorkstationSkillRequirement.skill_id",
-        cascade="all, delete-orphan",
-    )
-    project_requirements: Mapped[list[ProjectSkillRequirement]] = relationship(
-        "ProjectSkillRequirement",
-        back_populates="skill",
-        primaryjoin="Skill.id == foreign(ProjectSkillRequirement.skill_id)",
-        foreign_keys="ProjectSkillRequirement.skill_id",
         cascade="all, delete-orphan",
     )
     safety_trainings: Mapped[list[SafetyTraining]] = relationship(

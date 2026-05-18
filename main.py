@@ -11,9 +11,10 @@ from app.models import *  # noqa: F403 - register business ORM tables
 from app.routers import (
     attendance,
     capability,
-    collaboration,
     organization,
+    production,
     qualification,
+    risk,
     shopfloor,
     staffing,
     workforce,
@@ -45,9 +46,10 @@ app.include_router(workforce.router)
 app.include_router(capability.router)
 app.include_router(qualification.router)
 app.include_router(shopfloor.router)
+app.include_router(production.router)
+app.include_router(risk.router)
 app.include_router(staffing.router)
 app.include_router(attendance.router)
-app.include_router(collaboration.router)
 app.include_router(agent_router)
 
 

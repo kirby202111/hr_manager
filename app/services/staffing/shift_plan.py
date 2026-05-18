@@ -5,8 +5,8 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.errors import ConflictError, NotFoundError
+from app.repositories.production import production_order as production_order_repo
 from app.repositories.shopfloor import production_line as production_line_repo
-from app.repositories.shopfloor import production_order as production_order_repo
 from app.repositories.staffing import shift_plan as shift_plan_repo
 from app.repositories.staffing import shift_template as shift_template_repo
 from app.schemas.staffing import ShiftPlanCreate, ShiftPlanListResponse, ShiftPlanResponse, ShiftPlanUpdate

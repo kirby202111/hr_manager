@@ -15,10 +15,10 @@ ORM_EVAL_HELPERS = {"foreign": foreign}
 if TYPE_CHECKING:
     from app.models.attendance import AttendanceRecord, LeaveRequest, PayrollRecord
     from app.models.capability import WorkerSkill
-    from app.models.collaboration import ProjectMember, ProjectTimesheetEntry
     from app.models.organization import OrganizationUnit
     from app.models.qualification import EquipmentAuthorization, WorkerCertification, WorkerSafetyTraining
-    from app.models.shopfloor import OperationalRiskSignal, ProductionLine, ProductionTeam
+    from app.models.risk import OperationalRiskSignal
+    from app.models.shopfloor import ProductionLine, ProductionTeam
     from app.models.staffing import ShiftAssignment
 
 
@@ -112,20 +112,6 @@ class Worker(Base, IdentityMixin, TimestampMixin, DictMixin):
         back_populates="worker",
         primaryjoin="Worker.id == foreign(PayrollRecord.worker_id)",
         foreign_keys="PayrollRecord.worker_id",
-        cascade="all, delete-orphan",
-    )
-    project_memberships: Mapped[list[ProjectMember]] = relationship(
-        "ProjectMember",
-        back_populates="worker",
-        primaryjoin="Worker.id == foreign(ProjectMember.worker_id)",
-        foreign_keys="ProjectMember.worker_id",
-        cascade="all, delete-orphan",
-    )
-    project_timesheet_entries: Mapped[list[ProjectTimesheetEntry]] = relationship(
-        "ProjectTimesheetEntry",
-        back_populates="worker",
-        primaryjoin="Worker.id == foreign(ProjectTimesheetEntry.worker_id)",
-        foreign_keys="ProjectTimesheetEntry.worker_id",
         cascade="all, delete-orphan",
     )
     raised_risk_signals: Mapped[list[OperationalRiskSignal]] = relationship(

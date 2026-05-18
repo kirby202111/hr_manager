@@ -13,7 +13,7 @@ Workforce Ops 是一个面向制造业生产现场的人力运营系统。它不
 - 生产现场的岗位要求、风险信号、人员安排缺少统一视图
 - 业务人员想问一个问题时，往往需要跨多个模块手动拼信息
 
-Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资质、工位、班次、项目和风险这些生产现场对象挂在同一套业务模型上，再通过 API 与 Agent 对外提供能力。
+Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资质、工位、班次和风险这些生产现场对象挂在同一套业务模型上，再通过 API 与 Agent 对外提供能力。
 
 ## 核心能力
 
@@ -32,11 +32,9 @@ Workforce Ops 的设计思路是：以人员与组织为基础，把技能、资
   - 工位所需技能、证书、设备授权
   - 生产画像、班组归属、班次定义、排班计划
   - 工位资格校验与风险信号
-- 项目协同
-  - 项目、成员、技能需求、工时报工
 - 智能能力
   - 面向业务的技能注册
-  - 入职、考勤、请假、薪资、项目等 Agent skill
+  - 入职、考勤、请假、薪资等 Agent skill
   - 会话记忆与知识库能力
 
 ## Current Architecture
@@ -102,7 +100,6 @@ The runtime currently registers these skills:
 - `workforce`
 - `attendance`
 - `capability`
-- `collaboration`
 - `knowledge_base`
 - `memory`
 

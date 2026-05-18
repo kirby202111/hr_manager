@@ -1,4 +1,4 @@
-"""资质域 Schema，覆盖证书、安全培训与设备授权。"""
+"""Qualification schemas."""
 
 from datetime import date, datetime
 
@@ -6,8 +6,6 @@ from pydantic import BaseModel
 
 
 class CertificationCreate(BaseModel):
-    """证书目录创建输入。"""
-
     name: str
     code: str
     category: str
@@ -17,8 +15,6 @@ class CertificationCreate(BaseModel):
 
 
 class CertificationUpdate(BaseModel):
-    """证书目录部分更新输入。"""
-
     name: str | None = None
     code: str | None = None
     category: str | None = None
@@ -28,8 +24,6 @@ class CertificationUpdate(BaseModel):
 
 
 class CertificationResponse(BaseModel):
-    """证书目录标准响应。"""
-
     id: int
     name: str
     code: str
@@ -42,15 +36,11 @@ class CertificationResponse(BaseModel):
 
 
 class CertificationListResponse(BaseModel):
-    """证书目录列表响应。"""
-
     certifications: list[CertificationResponse]
     total: int
 
 
 class WorkerCertificationCreate(BaseModel):
-    """人员持证记录创建输入。"""
-
     worker_id: int
     certification_id: int
     certification_number: str | None = None
@@ -61,8 +51,6 @@ class WorkerCertificationCreate(BaseModel):
 
 
 class WorkerCertificationUpdate(BaseModel):
-    """人员持证记录部分更新输入。"""
-
     worker_id: int | None = None
     certification_id: int | None = None
     certification_number: str | None = None
@@ -73,8 +61,6 @@ class WorkerCertificationUpdate(BaseModel):
 
 
 class WorkerCertificationResponse(BaseModel):
-    """人员持证记录标准响应。"""
-
     id: int
     worker_id: int
     certification_id: int
@@ -88,15 +74,11 @@ class WorkerCertificationResponse(BaseModel):
 
 
 class WorkerCertificationListResponse(BaseModel):
-    """人员持证记录列表响应。"""
-
     worker_certifications: list[WorkerCertificationResponse]
     total: int
 
 
 class SafetyTrainingCreate(BaseModel):
-    """安全培训目录创建输入。"""
-
     title: str
     code: str
     category: str
@@ -108,8 +90,6 @@ class SafetyTrainingCreate(BaseModel):
 
 
 class SafetyTrainingUpdate(BaseModel):
-    """安全培训目录部分更新输入。"""
-
     title: str | None = None
     code: str | None = None
     category: str | None = None
@@ -121,8 +101,6 @@ class SafetyTrainingUpdate(BaseModel):
 
 
 class SafetyTrainingResponse(BaseModel):
-    """安全培训目录标准响应。"""
-
     id: int
     title: str
     code: str
@@ -137,15 +115,11 @@ class SafetyTrainingResponse(BaseModel):
 
 
 class SafetyTrainingListResponse(BaseModel):
-    """安全培训目录列表响应。"""
-
     safety_trainings: list[SafetyTrainingResponse]
     total: int
 
 
 class WorkerSafetyTrainingCreate(BaseModel):
-    """人员安全培训完成记录创建输入。"""
-
     worker_id: int
     safety_training_id: int
     completed_at: date
@@ -155,8 +129,6 @@ class WorkerSafetyTrainingCreate(BaseModel):
 
 
 class WorkerSafetyTrainingUpdate(BaseModel):
-    """人员安全培训完成记录部分更新输入。"""
-
     worker_id: int | None = None
     safety_training_id: int | None = None
     completed_at: date | None = None
@@ -166,8 +138,6 @@ class WorkerSafetyTrainingUpdate(BaseModel):
 
 
 class WorkerSafetyTrainingResponse(BaseModel):
-    """人员安全培训完成记录标准响应。"""
-
     id: int
     worker_id: int
     safety_training_id: int
@@ -180,15 +150,11 @@ class WorkerSafetyTrainingResponse(BaseModel):
 
 
 class WorkerSafetyTrainingListResponse(BaseModel):
-    """人员安全培训完成记录列表响应。"""
-
     worker_safety_trainings: list[WorkerSafetyTrainingResponse]
     total: int
 
 
 class EquipmentAuthorizationCreate(BaseModel):
-    """设备操作授权记录创建输入。"""
-
     worker_id: int
     equipment_code: str
     authorization_level: str
@@ -199,8 +165,6 @@ class EquipmentAuthorizationCreate(BaseModel):
 
 
 class EquipmentAuthorizationUpdate(BaseModel):
-    """设备操作授权记录部分更新输入。"""
-
     worker_id: int | None = None
     equipment_code: str | None = None
     authorization_level: str | None = None
@@ -211,8 +175,6 @@ class EquipmentAuthorizationUpdate(BaseModel):
 
 
 class EquipmentAuthorizationResponse(BaseModel):
-    """设备操作授权记录标准响应。"""
-
     id: int
     worker_id: int
     equipment_code: str
@@ -226,9 +188,91 @@ class EquipmentAuthorizationResponse(BaseModel):
 
 
 class EquipmentAuthorizationListResponse(BaseModel):
-    """设备操作授权记录列表响应。"""
-
     equipment_authorizations: list[EquipmentAuthorizationResponse]
+    total: int
+
+
+class WorkstationSkillRequirementCreate(BaseModel):
+    workstation_id: int
+    skill_id: int
+    required_proficiency: str
+    mandatory: bool = True
+
+
+class WorkstationSkillRequirementUpdate(BaseModel):
+    workstation_id: int | None = None
+    skill_id: int | None = None
+    required_proficiency: str | None = None
+    mandatory: bool | None = None
+
+
+class WorkstationSkillRequirementResponse(BaseModel):
+    id: int
+    workstation_id: int
+    skill_id: int
+    required_proficiency: str
+    mandatory: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkstationSkillRequirementListResponse(BaseModel):
+    workstation_skill_requirements: list[WorkstationSkillRequirementResponse]
+    total: int
+
+
+class WorkstationCertificationRequirementCreate(BaseModel):
+    workstation_id: int
+    certification_id: int
+    mandatory: bool = True
+
+
+class WorkstationCertificationRequirementUpdate(BaseModel):
+    workstation_id: int | None = None
+    certification_id: int | None = None
+    mandatory: bool | None = None
+
+
+class WorkstationCertificationRequirementResponse(BaseModel):
+    id: int
+    workstation_id: int
+    certification_id: int
+    mandatory: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkstationCertificationRequirementListResponse(BaseModel):
+    workstation_certification_requirements: list[WorkstationCertificationRequirementResponse]
+    total: int
+
+
+class WorkstationEquipmentRequirementCreate(BaseModel):
+    workstation_id: int
+    equipment_code: str
+    required_authorization_level: str
+    mandatory: bool = True
+
+
+class WorkstationEquipmentRequirementUpdate(BaseModel):
+    workstation_id: int | None = None
+    equipment_code: str | None = None
+    required_authorization_level: str | None = None
+    mandatory: bool | None = None
+
+
+class WorkstationEquipmentRequirementResponse(BaseModel):
+    id: int
+    workstation_id: int
+    equipment_code: str
+    required_authorization_level: str
+    mandatory: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkstationEquipmentRequirementListResponse(BaseModel):
+    workstation_equipment_requirements: list[WorkstationEquipmentRequirementResponse]
     total: int
 
 
@@ -253,4 +297,16 @@ __all__ = [
     "WorkerSafetyTrainingListResponse",
     "WorkerSafetyTrainingResponse",
     "WorkerSafetyTrainingUpdate",
+    "WorkstationCertificationRequirementCreate",
+    "WorkstationCertificationRequirementListResponse",
+    "WorkstationCertificationRequirementResponse",
+    "WorkstationCertificationRequirementUpdate",
+    "WorkstationEquipmentRequirementCreate",
+    "WorkstationEquipmentRequirementListResponse",
+    "WorkstationEquipmentRequirementResponse",
+    "WorkstationEquipmentRequirementUpdate",
+    "WorkstationSkillRequirementCreate",
+    "WorkstationSkillRequirementListResponse",
+    "WorkstationSkillRequirementResponse",
+    "WorkstationSkillRequirementUpdate",
 ]

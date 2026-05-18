@@ -1,10 +1,11 @@
-﻿"""Service module."""
+"""Service exports."""
 
 from app.services import attendance as attendance_services
 from app.services import capability as capability_services
-from app.services import collaboration as collaboration_services
 from app.services import organization as organization_services
+from app.services import production as production_services
 from app.services import qualification as qualification_services
+from app.services import risk as risk_services
 from app.services import shopfloor as shopfloor_services
 from app.services import staffing as staffing_services
 from app.services import workforce as workforce_services
@@ -12,9 +13,10 @@ from app.services import workforce as workforce_services
 _MODULES = (
     attendance_services,
     capability_services,
-    collaboration_services,
     organization_services,
+    production_services,
     qualification_services,
+    risk_services,
     shopfloor_services,
     staffing_services,
     workforce_services,

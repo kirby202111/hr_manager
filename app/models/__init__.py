@@ -2,27 +2,20 @@
 
 from app.models.attendance import AttendanceRecord, LeaveRequest, PayrollRecord
 from app.models.capability import Skill, WorkerSkill
-from app.models.collaboration import Project, ProjectMember, ProjectSkillRequirement, ProjectTimesheetEntry
 from app.models.organization import OrganizationUnit
+from app.models.production import ProductionOperation, ProductionOrder
 from app.models.qualification import (
     Certification,
     EquipmentAuthorization,
     SafetyTraining,
     WorkerCertification,
     WorkerSafetyTraining,
-)
-from app.models.shopfloor import (
-    OperationalRiskReview,
-    OperationalRiskSignal,
-    ProductionLine,
-    ProductionOperation,
-    ProductionOrder,
-    ProductionTeam,
-    Workstation,
     WorkstationCertificationRequirement,
     WorkstationEquipmentRequirement,
     WorkstationSkillRequirement,
 )
+from app.models.risk import OperationalRiskReview, OperationalRiskSignal
+from app.models.shopfloor import ProductionLine, ProductionTeam, Workstation
 from app.models.staffing import ShiftAssignment, ShiftPlan, ShiftTemplate
 from app.models.workforce import Worker, WorkerAssignment
 
@@ -39,10 +32,6 @@ __all__ = [
     "ProductionOperation",
     "ProductionOrder",
     "ProductionTeam",
-    "Project",
-    "ProjectMember",
-    "ProjectSkillRequirement",
-    "ProjectTimesheetEntry",
     "SafetyTraining",
     "ShiftAssignment",
     "ShiftPlan",

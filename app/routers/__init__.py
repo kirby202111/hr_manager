@@ -1,11 +1,12 @@
-"""业务路由层统一导出入口。"""
+"""Router exports."""
 
 from app.routers import (
     attendance,
     capability,
-    collaboration,
     organization,
+    production,
     qualification,
+    risk,
     shopfloor,
     staffing,
     workforce,
@@ -14,9 +15,10 @@ from app.routers import (
 __all__ = [
     "attendance",
     "capability",
-    "collaboration",
     "organization",
+    "production",
     "qualification",
+    "risk",
     "shopfloor",
     "staffing",
     "workforce",
