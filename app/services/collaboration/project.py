@@ -7,10 +7,12 @@ from app.repositories.collaboration import project as project_repo
 from app.schemas.collaboration import ProjectCreate, ProjectListResponse, ProjectResponse, ProjectUpdate
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ProjectResponse:
     return ProjectResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(project_id: int, db: Session | None = None) -> dict:
     row = project_repo.get_project_by_id(project_id, db)
     if row is None:
@@ -18,6 +20,7 @@ def _require_row(project_id: int, db: Session | None = None) -> dict:
     return row
 
 
+# 校验日期区间，避免开始时间晚于结束时间。
 def _validate_dates(payload: dict) -> None:
     start_date = payload.get("start_date")
     end_date = payload.get("end_date")

@@ -13,10 +13,12 @@ from app.schemas.organization import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> OrganizationUnitResponse:
     return OrganizationUnitResponse(**row)
 
 
+# 读取组织单元；不存在时统一抛出未找到异常。
 def _require_organization_unit(organization_unit_id: int, db: Session | None = None) -> dict:
     row = organization_unit_repo.get_organization_unit_by_id(organization_unit_id, db)
     if row is None:

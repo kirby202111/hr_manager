@@ -14,10 +14,12 @@ from app.schemas.collaboration import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ProjectMemberResponse:
     return ProjectMemberResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(project_member_id: int, db: Session | None = None) -> dict:
     row = project_member_repo.get_project_member_by_id(project_member_id, db)
     if row is None:
@@ -25,6 +27,7 @@ def _require_row(project_member_id: int, db: Session | None = None) -> dict:
     return row
 
 
+# 校验关联资源是否存在，并检查跨实体引用是否合法。
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if project_repo.get_project_by_id(payload["project_id"], db) is None:
         raise NotFoundError(f"Project {payload['project_id']} not found")

@@ -8,10 +8,12 @@ from app.repositories.workforce import worker as worker_repo
 from app.schemas.workforce import WorkerCreate, WorkerListResponse, WorkerResponse, WorkerUpdate
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkerResponse:
     return WorkerResponse(**row)
 
 
+# 读取员工记录；不存在时统一抛出未找到异常。
 def _require_worker(worker_id: int, db: Session | None = None) -> dict:
     row = worker_repo.get_worker_by_id(worker_id, db)
     if row is None:

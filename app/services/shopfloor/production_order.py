@@ -13,10 +13,12 @@ from app.schemas.shopfloor import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ProductionOrderResponse:
     return ProductionOrderResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(production_order_id: int, db: Session | None = None) -> dict:
     row = production_order_repo.get_production_order_by_id(production_order_id, db)
     if row is None:

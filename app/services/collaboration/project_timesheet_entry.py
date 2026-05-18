@@ -15,10 +15,12 @@ from app.schemas.collaboration import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ProjectTimesheetEntryResponse:
     return ProjectTimesheetEntryResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(project_timesheet_entry_id: int, db: Session | None = None) -> dict:
     row = project_timesheet_entry_repo.get_project_timesheet_entry_by_id(project_timesheet_entry_id, db)
     if row is None:
@@ -26,6 +28,7 @@ def _require_row(project_timesheet_entry_id: int, db: Session | None = None) -> 
     return row
 
 
+# 校验关联对象与关键业务字段，避免写入非法数据。
 def _validate_payload(payload: dict, db: Session | None = None) -> None:
     if project_repo.get_project_by_id(payload["project_id"], db) is None:
         raise NotFoundError(f"Project {payload['project_id']} not found")

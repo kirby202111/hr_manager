@@ -14,10 +14,12 @@ from app.schemas.capability import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkerSkillResponse:
     return WorkerSkillResponse(**row)
 
 
+# 读取员工技能记录；不存在时统一抛出未找到异常。
 def _require_worker_skill(worker_skill_id: int, db: Session | None = None) -> dict:
     row = worker_skill_repo.get_worker_skill_by_id(worker_skill_id, db)
     if row is None:

@@ -8,10 +8,12 @@ from app.repositories.shopfloor import workstation as workstation_repo
 from app.schemas.shopfloor import WorkstationCreate, WorkstationListResponse, WorkstationResponse, WorkstationUpdate
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkstationResponse:
     return WorkstationResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(workstation_id: int, db: Session | None = None) -> dict:
     row = workstation_repo.get_workstation_by_id(workstation_id, db)
     if row is None:

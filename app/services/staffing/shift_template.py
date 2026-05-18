@@ -12,10 +12,12 @@ from app.schemas.staffing import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ShiftTemplateResponse:
     return ShiftTemplateResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(shift_template_id: int, db: Session | None = None) -> dict:
     row = shift_template_repo.get_shift_template_by_id(shift_template_id, db)
     if row is None:

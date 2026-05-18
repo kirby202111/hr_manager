@@ -17,10 +17,12 @@ from app.schemas.shopfloor import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> OperationalRiskSignalResponse:
     return OperationalRiskSignalResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(operational_risk_signal_id: int, db: Session | None = None) -> dict:
     row = operational_risk_signal_repo.get_operational_risk_signal_by_id(operational_risk_signal_id, db)
     if row is None:
@@ -28,6 +30,7 @@ def _require_row(operational_risk_signal_id: int, db: Session | None = None) -> 
     return row
 
 
+# 校验关联资源是否存在，并检查跨实体引用是否合法。
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if (
         payload.get("production_order_id") is not None

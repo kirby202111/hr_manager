@@ -17,10 +17,12 @@ from app.schemas.staffing import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ShiftAssignmentResponse:
     return ShiftAssignmentResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(shift_assignment_id: int, db: Session | None = None) -> dict:
     row = shift_assignment_repo.get_shift_assignment_by_id(shift_assignment_id, db)
     if row is None:
@@ -28,6 +30,7 @@ def _require_row(shift_assignment_id: int, db: Session | None = None) -> dict:
     return row
 
 
+# 检查是否存在重复业务数据，供新增和更新流程复用。
 def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int | None = None) -> bool:
     rows = shift_assignment_repo.list_shift_assignments(
         payload["shift_plan_id"], payload["worker_id"], payload["workstation_id"], None, db
@@ -39,6 +42,7 @@ def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int 
     return False
 
 
+# 校验关联资源是否存在，并检查跨实体引用是否合法。
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if shift_plan_repo.get_shift_plan_by_id(payload["shift_plan_id"], db) is None:
         raise NotFoundError(f"Shift plan {payload['shift_plan_id']} not found")

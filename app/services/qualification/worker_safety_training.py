@@ -14,10 +14,12 @@ from app.schemas.qualification import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkerSafetyTrainingResponse:
     return WorkerSafetyTrainingResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(worker_safety_training_id: int, db: Session | None = None) -> dict:
     row = worker_safety_training_repo.get_worker_safety_training_by_id(worker_safety_training_id, db)
     if row is None:
@@ -25,6 +27,7 @@ def _require_row(worker_safety_training_id: int, db: Session | None = None) -> d
     return row
 
 
+# 校验关联对象与关键业务字段，避免写入非法数据。
 def _validate_payload(payload: dict, db: Session | None = None) -> None:
     if worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")

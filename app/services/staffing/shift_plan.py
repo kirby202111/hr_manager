@@ -12,10 +12,12 @@ from app.repositories.staffing import shift_template as shift_template_repo
 from app.schemas.staffing import ShiftPlanCreate, ShiftPlanListResponse, ShiftPlanResponse, ShiftPlanUpdate
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ShiftPlanResponse:
     return ShiftPlanResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(shift_plan_id: int, db: Session | None = None) -> dict:
     row = shift_plan_repo.get_shift_plan_by_id(shift_plan_id, db)
     if row is None:
@@ -23,6 +25,7 @@ def _require_row(shift_plan_id: int, db: Session | None = None) -> dict:
     return row
 
 
+# 检查是否存在重复业务数据，供新增和更新流程复用。
 def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int | None = None) -> bool:
     rows = shift_plan_repo.list_shift_plans(
         payload["production_line_id"],

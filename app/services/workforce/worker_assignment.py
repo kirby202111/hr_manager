@@ -16,10 +16,12 @@ from app.schemas.workforce import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkerAssignmentResponse:
     return WorkerAssignmentResponse(**row)
 
 
+# 读取分配记录；不存在时统一抛出未找到异常。
 def _require_assignment(worker_assignment_id: int, db: Session | None = None) -> dict:
     row = worker_assignment_repo.get_worker_assignment_by_id(worker_assignment_id, db)
     if row is None:
@@ -27,6 +29,7 @@ def _require_assignment(worker_assignment_id: int, db: Session | None = None) ->
     return row
 
 
+# 校验关联资源是否存在，并检查跨实体引用是否合法。
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if payload.get("worker_id") is not None and worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")
@@ -51,6 +54,7 @@ def _validate_links(payload: dict, db: Session | None = None) -> None:
         raise ValidationError("start_date cannot be later than end_date")
 
 
+# 校验同一员工下的分配记录是否重复。
 def _ensure_unique_assignment(
     worker_id: int, data: dict, db: Session | None = None, exclude_id: int | None = None
 ) -> None:

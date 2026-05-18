@@ -13,10 +13,12 @@ from app.schemas.shopfloor import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> OperationalRiskReviewResponse:
     return OperationalRiskReviewResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(operational_risk_review_id: int, db: Session | None = None) -> dict:
     row = operational_risk_review_repo.get_operational_risk_review_by_id(operational_risk_review_id, db)
     if row is None:

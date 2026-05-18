@@ -14,10 +14,12 @@ from app.schemas.shopfloor import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> WorkstationSkillRequirementResponse:
     return WorkstationSkillRequirementResponse(**row)
 
 
+# 读取单条记录；不存在时统一抛出未找到异常。
 def _require_row(requirement_id: int, db: Session | None = None) -> dict:
     row = workstation_skill_requirement_repo.get_workstation_skill_requirement_by_id(requirement_id, db)
     if row is None:
@@ -25,6 +27,7 @@ def _require_row(requirement_id: int, db: Session | None = None) -> dict:
     return row
 
 
+# 检查是否存在重复业务数据，供新增和更新流程复用。
 def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int | None = None) -> bool:
     rows = workstation_skill_requirement_repo.list_workstation_skill_requirements(payload["workstation_id"], db)
     for row in rows:

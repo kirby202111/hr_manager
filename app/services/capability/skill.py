@@ -7,10 +7,12 @@ from app.repositories.capability import skill as skill_repo
 from app.schemas.capability import SkillCreate, SkillListResponse, SkillResponse, SkillUpdate
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> SkillResponse:
     return SkillResponse(**row)
 
 
+# 读取技能定义；不存在时统一抛出未找到异常。
 def _require_skill(skill_id: int, db: Session | None = None) -> dict:
     row = skill_repo.get_skill_by_id(skill_id, db)
     if row is None:

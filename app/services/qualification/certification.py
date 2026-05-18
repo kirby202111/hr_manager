@@ -12,10 +12,12 @@ from app.schemas.qualification import (
 )
 
 
+# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> CertificationResponse:
     return CertificationResponse(**row)
 
 
+# 读取证书定义；不存在时统一抛出未找到异常。
 def _require_certification(certification_id: int, db: Session | None = None) -> dict:
     row = certification_repo.get_certification_by_id(certification_id, db)
     if row is None:
