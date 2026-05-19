@@ -384,7 +384,20 @@ def _resolve_operation_for_assignment(
             )
         ]
     active_rows = [row for row in rows if row["status"] in ACTIVE_OPERATION_STATUSES]
-    candidates = active_rows or rows
+    if not active_rows:
+        return None, [
+            _build_detail(
+                dimension="operation_context",
+                requirement_type="operation_context",
+                reason_code="MISSING_OPERATION_CONTEXT",
+                message="Production order does not define an active operation for the workstation",
+                status="blocked",
+                severity="error",
+                expected_value="1",
+                actual_value="0",
+            )
+        ]
+    candidates = active_rows
     candidates.sort(key=lambda row: (row["sequence_number"], row["id"]))
     if len(candidates) > 1:
         return None, [

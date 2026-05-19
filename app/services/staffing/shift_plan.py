@@ -4,7 +4,7 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.errors import ConflictError, NotFoundError
+from app.errors import ConflictError, NotFoundError, ValidationError
 from app.repositories.production import production_order as production_order_repo
 from app.repositories.shopfloor import production_line as production_line_repo
 from app.repositories.staffing import shift_plan as shift_plan_repo
@@ -61,15 +61,19 @@ def get_shift_plan(shift_plan_id: int, db: Session | None = None) -> ShiftPlanRe
 
 
 def create_shift_plan(data: ShiftPlanCreate, db: Session | None = None) -> ShiftPlanResponse:
-    if production_line_repo.get_production_line_by_id(data.production_line_id, db) is None:
+    production_line = production_line_repo.get_production_line_by_id(data.production_line_id, db)
+    if production_line is None:
         raise NotFoundError(f"Production line {data.production_line_id} not found")
     if shift_template_repo.get_shift_template_by_id(data.shift_template_id, db) is None:
         raise NotFoundError(f"Shift template {data.shift_template_id} not found")
-    if (
-        data.production_order_id is not None
-        and production_order_repo.get_production_order_by_id(data.production_order_id, db) is None
-    ):
-        raise NotFoundError(f"Production order {data.production_order_id} not found")
+    if data.production_order_id is not None:
+        production_order = production_order_repo.get_production_order_by_id(data.production_order_id, db)
+        if production_order is None:
+            raise NotFoundError(f"Production order {data.production_order_id} not found")
+        if production_order.get("production_line_id") is None:
+            raise ValidationError("Production order must be assigned to a production line before creating shift plans")
+        if production_order["production_line_id"] != production_line["id"]:
+            raise ValidationError("Shift plan production line must match the linked production order")
     if _exists_duplicate(data.model_dump(), db):
         raise ConflictError("Shift plan already exists for line, date, and template")
     row = shift_plan_repo.create_shift_plan(data.model_dump(), db)
@@ -79,15 +83,19 @@ def create_shift_plan(data: ShiftPlanCreate, db: Session | None = None) -> Shift
 def update_shift_plan(shift_plan_id: int, data: ShiftPlanUpdate, db: Session | None = None) -> ShiftPlanResponse:
     current = _require_row(shift_plan_id, db)
     payload = {**current, **data.model_dump(exclude_unset=True)}
-    if production_line_repo.get_production_line_by_id(payload["production_line_id"], db) is None:
+    production_line = production_line_repo.get_production_line_by_id(payload["production_line_id"], db)
+    if production_line is None:
         raise NotFoundError(f"Production line {payload['production_line_id']} not found")
     if shift_template_repo.get_shift_template_by_id(payload["shift_template_id"], db) is None:
         raise NotFoundError(f"Shift template {payload['shift_template_id']} not found")
-    if (
-        payload.get("production_order_id") is not None
-        and production_order_repo.get_production_order_by_id(payload["production_order_id"], db) is None
-    ):
-        raise NotFoundError(f"Production order {payload['production_order_id']} not found")
+    if payload.get("production_order_id") is not None:
+        production_order = production_order_repo.get_production_order_by_id(payload["production_order_id"], db)
+        if production_order is None:
+            raise NotFoundError(f"Production order {payload['production_order_id']} not found")
+        if production_order.get("production_line_id") is None:
+            raise ValidationError("Production order must be assigned to a production line before creating shift plans")
+        if production_order["production_line_id"] != production_line["id"]:
+            raise ValidationError("Shift plan production line must match the linked production order")
     if _exists_duplicate(payload, db, exclude_id=shift_plan_id):
         raise ConflictError("Shift plan already exists for line, date, and template")
     row = shift_plan_repo.update_shift_plan(shift_plan_id, data.model_dump(exclude_unset=True), db)

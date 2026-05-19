@@ -1,4 +1,6 @@
-﻿"""Service module."""
+"""Service module."""
+
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -33,25 +35,50 @@ def _require_assignment(worker_assignment_id: int, db: Session | None = None) ->
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if payload.get("worker_id") is not None and worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")
-    if (
-        payload.get("organization_unit_id") is not None
-        and organization_unit_repo.get_organization_unit_by_id(payload["organization_unit_id"], db) is None
-    ):
-        raise NotFoundError(f"Organization unit {payload['organization_unit_id']} not found")
-    if (
-        payload.get("production_line_id") is not None
-        and production_line_repo.get_production_line_by_id(payload["production_line_id"], db) is None
-    ):
-        raise NotFoundError(f"Production line {payload['production_line_id']} not found")
-    if (
-        payload.get("production_team_id") is not None
-        and production_team_repo.get_production_team_by_id(payload["production_team_id"], db) is None
-    ):
-        raise NotFoundError(f"Production team {payload['production_team_id']} not found")
+
+    organization_unit = None
+    if payload.get("organization_unit_id") is not None:
+        organization_unit = organization_unit_repo.get_organization_unit_by_id(payload["organization_unit_id"], db)
+        if organization_unit is None:
+            raise NotFoundError(f"Organization unit {payload['organization_unit_id']} not found")
+
+    production_line = None
+    if payload.get("production_line_id") is not None:
+        production_line = production_line_repo.get_production_line_by_id(payload["production_line_id"], db)
+        if production_line is None:
+            raise NotFoundError(f"Production line {payload['production_line_id']} not found")
+
+    production_team = None
+    if payload.get("production_team_id") is not None:
+        production_team = production_team_repo.get_production_team_by_id(payload["production_team_id"], db)
+        if production_team is None:
+            raise NotFoundError(f"Production team {payload['production_team_id']} not found")
+
+    if organization_unit is not None and production_line is not None:
+        if production_line["organization_unit_id"] != organization_unit["id"]:
+            raise ValidationError("Production line must belong to the assignment organization unit")
+
+    if production_team is not None:
+        if production_line is None:
+            raise ValidationError("Production line is required when assigning a production team")
+        if production_team["production_line_id"] != production_line["id"]:
+            raise ValidationError("Production team must belong to the assignment production line")
+
     start_date = payload.get("start_date")
     end_date = payload.get("end_date")
     if start_date is not None and end_date is not None and start_date > end_date:
         raise ValidationError("start_date cannot be later than end_date")
+
+
+def _date_ranges_overlap(
+    left_start: date,
+    left_end: date | None,
+    right_start: date,
+    right_end: date | None,
+) -> bool:
+    left_end_value = left_end or date.max
+    right_end_value = right_end or date.max
+    return left_start <= right_end_value and right_start <= left_end_value
 
 
 # 校验同一员工下的分配记录是否重复。
@@ -71,6 +98,19 @@ def _ensure_unique_assignment(
             and row["start_date"] == data.get("start_date")
         ):
             raise ConflictError("Worker assignment already exists")
+        if (
+            data.get("is_primary")
+            and data.get("status") == "active"
+            and row.get("is_primary")
+            and row.get("status") == "active"
+            and _date_ranges_overlap(
+                row["start_date"],
+                row.get("end_date"),
+                data["start_date"],
+                data.get("end_date"),
+            )
+        ):
+            raise ConflictError("Worker already has an overlapping active primary assignment")
 
 
 def list_worker_assignments(

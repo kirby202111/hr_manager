@@ -2,7 +2,7 @@
 
 from sqlalchemy.orm import Session
 
-from app.errors import ConflictError, NotFoundError
+from app.errors import ConflictError, NotFoundError, ValidationError
 from app.repositories.production import production_operation as production_operation_repo
 from app.repositories.production import production_order as production_order_repo
 from app.repositories.shopfloor import workstation as workstation_repo
@@ -56,10 +56,16 @@ def create_production_operation(
     data: ProductionOperationCreate,
     db: Session | None = None,
 ) -> ProductionOperationResponse:
-    if production_order_repo.get_production_order_by_id(data.production_order_id, db) is None:
+    production_order = production_order_repo.get_production_order_by_id(data.production_order_id, db)
+    if production_order is None:
         raise NotFoundError(f"Production order {data.production_order_id} not found")
-    if workstation_repo.get_workstation_by_id(data.workstation_id, db) is None:
+    workstation = workstation_repo.get_workstation_by_id(data.workstation_id, db)
+    if workstation is None:
         raise NotFoundError(f"Workstation {data.workstation_id} not found")
+    if production_order.get("production_line_id") is None:
+        raise ValidationError("Production order must be assigned to a production line before adding operations")
+    if production_order["production_line_id"] != workstation["production_line_id"]:
+        raise ValidationError("Production operation workstation must belong to the production order production line")
     if _exists_duplicate(data.model_dump(), db):
         raise ConflictError("Production operation sequence already exists in production order")
     row = production_operation_repo.create_production_operation(data.model_dump(), db)
@@ -73,10 +79,16 @@ def update_production_operation(
 ) -> ProductionOperationResponse:
     current = _require_row(production_operation_id, db)
     payload = {**current, **data.model_dump(exclude_unset=True)}
-    if production_order_repo.get_production_order_by_id(payload["production_order_id"], db) is None:
+    production_order = production_order_repo.get_production_order_by_id(payload["production_order_id"], db)
+    if production_order is None:
         raise NotFoundError(f"Production order {payload['production_order_id']} not found")
-    if workstation_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
+    workstation = workstation_repo.get_workstation_by_id(payload["workstation_id"], db)
+    if workstation is None:
         raise NotFoundError(f"Workstation {payload['workstation_id']} not found")
+    if production_order.get("production_line_id") is None:
+        raise ValidationError("Production order must be assigned to a production line before adding operations")
+    if production_order["production_line_id"] != workstation["production_line_id"]:
+        raise ValidationError("Production operation workstation must belong to the production order production line")
     if _exists_duplicate(payload, db, exclude_id=production_operation_id):
         raise ConflictError("Production operation sequence already exists in production order")
     row = production_operation_repo.update_production_operation(

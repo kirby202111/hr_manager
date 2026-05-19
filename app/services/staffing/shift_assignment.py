@@ -64,12 +64,16 @@ def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int 
 
 
 def _validate_links(payload: dict, db: Session | None = None) -> None:
-    if shift_plan_repo.get_shift_plan_by_id(payload["shift_plan_id"], db) is None:
+    shift_plan = shift_plan_repo.get_shift_plan_by_id(payload["shift_plan_id"], db)
+    if shift_plan is None:
         raise NotFoundError(f"Shift plan {payload['shift_plan_id']} not found")
     if worker_repo.get_worker_by_id(payload["worker_id"], db) is None:
         raise NotFoundError(f"Worker {payload['worker_id']} not found")
-    if workstation_repo.get_workstation_by_id(payload["workstation_id"], db) is None:
+    workstation = workstation_repo.get_workstation_by_id(payload["workstation_id"], db)
+    if workstation is None:
         raise NotFoundError(f"Workstation {payload['workstation_id']} not found")
+    if shift_plan["production_line_id"] != workstation["production_line_id"]:
+        raise ValidationError("Shift assignment workstation must belong to the shift plan production line")
 
 
 def list_shift_assignments(
