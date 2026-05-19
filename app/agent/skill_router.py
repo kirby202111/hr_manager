@@ -10,7 +10,7 @@ from app.agent.protocol import AgentSkill
 class SkillRouter:
     """Resolve likely skills from user messages using local heuristics."""
 
-    def __init__(self, default_skill: str = "workforce") -> None:
+    def __init__(self, default_skill: str = "memory") -> None:
         self._default_skill = default_skill
 
     def route(self, message: str, skills: list[AgentSkill]) -> list[str]:
