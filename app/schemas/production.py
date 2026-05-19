@@ -93,7 +93,59 @@ class ProductionOperationListResponse(BaseModel):
     total: int
 
 
+class OperationQualificationRequirementCreate(BaseModel):
+    requirement_type: str
+    reference_id: int | None = None
+    equipment_code: str | None = None
+    min_proficiency_level: str | None = None
+    must_be_validated: bool = False
+    min_authorization_level: str | None = None
+    min_score: float | None = None
+    is_mandatory: bool = True
+    status: str = "active"
+    description: str | None = None
+
+
+class OperationQualificationRequirementUpdate(BaseModel):
+    requirement_type: str | None = None
+    reference_id: int | None = None
+    equipment_code: str | None = None
+    min_proficiency_level: str | None = None
+    must_be_validated: bool | None = None
+    min_authorization_level: str | None = None
+    min_score: float | None = None
+    is_mandatory: bool | None = None
+    status: str | None = None
+    description: str | None = None
+
+
+class OperationQualificationRequirementResponse(BaseModel):
+    id: int
+    production_operation_id: int
+    requirement_type: str
+    reference_id: int | None = None
+    equipment_code: str | None = None
+    min_proficiency_level: str | None = None
+    must_be_validated: bool
+    min_authorization_level: str | None = None
+    min_score: float | None = None
+    is_mandatory: bool
+    status: str
+    description: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class OperationQualificationRequirementListResponse(BaseModel):
+    requirements: list[OperationQualificationRequirementResponse]
+    total: int
+
+
 __all__ = [
+    "OperationQualificationRequirementCreate",
+    "OperationQualificationRequirementListResponse",
+    "OperationQualificationRequirementResponse",
+    "OperationQualificationRequirementUpdate",
     "ProductionOperationCreate",
     "ProductionOperationListResponse",
     "ProductionOperationResponse",

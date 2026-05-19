@@ -192,6 +192,66 @@ class EquipmentAuthorizationListResponse(BaseModel):
     total: int
 
 
+class EligibilityCheckRequest(BaseModel):
+    worker_id: int
+    workstation_id: int
+    work_date: date
+    production_operation_id: int | None = None
+    persist_snapshot: bool = True
+
+
+class EligibilityDetailResponse(BaseModel):
+    dimension: str
+    requirement_type: str
+    reference_id: int | None = None
+    reference_code: str | None = None
+    reference_name: str | None = None
+    status: str
+    reason_code: str
+    message: str
+    actual_value: str | None = None
+    expected_value: str | None = None
+    severity: str
+
+
+class WorkerEligibilityEvaluationResponse(BaseModel):
+    status: str
+    summary_reason: str
+    snapshot_id: int | None = None
+    worker_id: int
+    workstation_id: int
+    production_operation_id: int | None = None
+    shift_plan_id: int | None = None
+    shift_assignment_id: int | None = None
+    work_date: date
+    details: list[EligibilityDetailResponse]
+    checked_at: datetime
+
+
+class WorkerEligibilitySnapshotResponse(BaseModel):
+    id: int
+    worker_id: int
+    workstation_id: int
+    production_operation_id: int | None = None
+    shift_plan_id: int | None = None
+    shift_assignment_id: int | None = None
+    work_date: date
+    status: str
+    summary_reason: str
+    detail_json: list[dict]
+    checked_at: datetime
+    checked_by: str
+    rule_version: str
+    source_context: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class WorkerEligibilitySnapshotListResponse(BaseModel):
+    snapshots: list[WorkerEligibilitySnapshotResponse]
+    total: int
+
+
 __all__ = [
     "CertificationCreate",
     "CertificationListResponse",
@@ -201,10 +261,15 @@ __all__ = [
     "EquipmentAuthorizationListResponse",
     "EquipmentAuthorizationResponse",
     "EquipmentAuthorizationUpdate",
+    "EligibilityCheckRequest",
+    "EligibilityDetailResponse",
     "SafetyTrainingCreate",
     "SafetyTrainingListResponse",
     "SafetyTrainingResponse",
     "SafetyTrainingUpdate",
+    "WorkerEligibilityEvaluationResponse",
+    "WorkerEligibilitySnapshotListResponse",
+    "WorkerEligibilitySnapshotResponse",
     "WorkerCertificationCreate",
     "WorkerCertificationListResponse",
     "WorkerCertificationResponse",

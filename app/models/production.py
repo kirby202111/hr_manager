@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, Float, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, Float, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 
 from app.models.base import Base, DictMixin, IdentityMixin, TimestampMixin
@@ -92,6 +92,39 @@ class ProductionOperation(Base, IdentityMixin, TimestampMixin, DictMixin):
         primaryjoin="foreign(ProductionOperation.workstation_id) == Workstation.id",
         foreign_keys=[workstation_id],
     )
+    qualification_requirements: Mapped[list[OperationQualificationRequirement]] = relationship(
+        "OperationQualificationRequirement",
+        back_populates="production_operation",
+        primaryjoin="ProductionOperation.id == foreign(OperationQualificationRequirement.production_operation_id)",
+        foreign_keys="OperationQualificationRequirement.production_operation_id",
+        cascade="all, delete-orphan",
+    )
 
 
-__all__ = ["ProductionOperation", "ProductionOrder"]
+class OperationQualificationRequirement(Base, IdentityMixin, TimestampMixin, DictMixin):
+    __tablename__ = "operation_qualification_requirements"
+    __table_args__ = (
+        Index("ix_operation_qualification_requirements_operation_status", "production_operation_id", "status"),
+    )
+
+    production_operation_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    requirement_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    reference_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    equipment_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    min_proficiency_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    must_be_validated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    min_authorization_level: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    min_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    production_operation: Mapped[ProductionOperation] = relationship(
+        "ProductionOperation",
+        back_populates="qualification_requirements",
+        primaryjoin="foreign(OperationQualificationRequirement.production_operation_id) == ProductionOperation.id",
+        foreign_keys=[production_operation_id],
+    )
+
+
+__all__ = ["OperationQualificationRequirement", "ProductionOperation", "ProductionOrder"]

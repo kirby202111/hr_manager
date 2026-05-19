@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, Float, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Date, DateTime, Float, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 
 from app.models.base import Base, DictMixin, IdentityMixin, TimestampMixin
@@ -14,6 +14,9 @@ ORM_EVAL_HELPERS = {"foreign": foreign}
 
 if TYPE_CHECKING:
     from app.models.capability import Skill
+    from app.models.production import ProductionOperation
+    from app.models.shopfloor import Workstation
+    from app.models.staffing import ShiftAssignment, ShiftPlan
     from app.models.workforce import Worker
 
 
@@ -155,10 +158,61 @@ class EquipmentAuthorization(Base, IdentityMixin, TimestampMixin, DictMixin):
     )
 
 
+class WorkerEligibilitySnapshot(Base, IdentityMixin, TimestampMixin, DictMixin):
+    __tablename__ = "worker_eligibility_snapshots"
+    __table_args__ = (
+        Index("ix_worker_eligibility_snapshots_worker_work_date", "worker_id", "work_date"),
+        Index("ix_worker_eligibility_snapshots_status_checked_at", "status", "checked_at"),
+        Index("ix_worker_eligibility_snapshots_shift_plan_id", "shift_plan_id"),
+        Index("ix_worker_eligibility_snapshots_shift_assignment_id", "shift_assignment_id"),
+    )
+
+    worker_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    workstation_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    production_operation_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    shift_plan_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    shift_assignment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    work_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    summary_reason: Mapped[str] = mapped_column(String(255), nullable=False)
+    detail_json: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    checked_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    checked_by: Mapped[str] = mapped_column(String(20), nullable=False, default="system")
+    rule_version: Mapped[str] = mapped_column(String(40), nullable=False, default="v1")
+    source_context: Mapped[str] = mapped_column(String(40), nullable=False)
+
+    worker: Mapped[Worker] = relationship(
+        "Worker",
+        primaryjoin="foreign(WorkerEligibilitySnapshot.worker_id) == Worker.id",
+        foreign_keys=[worker_id],
+    )
+    workstation: Mapped[Workstation] = relationship(
+        "Workstation",
+        primaryjoin="foreign(WorkerEligibilitySnapshot.workstation_id) == Workstation.id",
+        foreign_keys=[workstation_id],
+    )
+    production_operation: Mapped[ProductionOperation | None] = relationship(
+        "ProductionOperation",
+        primaryjoin="foreign(WorkerEligibilitySnapshot.production_operation_id) == ProductionOperation.id",
+        foreign_keys=[production_operation_id],
+    )
+    shift_plan: Mapped[ShiftPlan | None] = relationship(
+        "ShiftPlan",
+        primaryjoin="foreign(WorkerEligibilitySnapshot.shift_plan_id) == ShiftPlan.id",
+        foreign_keys=[shift_plan_id],
+    )
+    shift_assignment: Mapped[ShiftAssignment | None] = relationship(
+        "ShiftAssignment",
+        primaryjoin="foreign(WorkerEligibilitySnapshot.shift_assignment_id) == ShiftAssignment.id",
+        foreign_keys=[shift_assignment_id],
+    )
+
+
 __all__ = [
     "Certification",
     "EquipmentAuthorization",
     "SafetyTraining",
+    "WorkerEligibilitySnapshot",
     "WorkerCertification",
     "WorkerSafetyTraining",
 ]

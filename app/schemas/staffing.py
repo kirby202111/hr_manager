@@ -129,6 +129,9 @@ class ShiftAssignmentResponse(BaseModel):
     assignment_type: str
     status: str
     assigned_role: str | None = None
+    eligibility_status: str | None = None
+    eligibility_summary_reason: str | None = None
+    eligibility_snapshot_id: int | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -1,10 +1,10 @@
-﻿"""Service module."""
+"""Service module."""
 
 from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.errors import ConflictError, NotFoundError
+from app.errors import ConflictError, NotFoundError, ValidationError
 from app.repositories.shopfloor import workstation as workstation_repo
 from app.repositories.staffing import shift_assignment as shift_assignment_repo
 from app.repositories.staffing import shift_plan as shift_plan_repo
@@ -15,14 +15,22 @@ from app.schemas.staffing import (
     ShiftAssignmentResponse,
     ShiftAssignmentUpdate,
 )
+from app.services.qualification import eligibility as eligibility_service
 
 
-# 将仓储层返回的原始数据转换为对外响应模型。
 def _to_response(row: dict) -> ShiftAssignmentResponse:
     return ShiftAssignmentResponse(**row)
 
 
-# 读取单条记录；不存在时统一抛出未找到异常。
+def _attach_eligibility(row: dict, evaluation: object | None = None) -> ShiftAssignmentResponse:
+    payload = dict(row)
+    if evaluation is not None:
+        payload["eligibility_status"] = evaluation.status
+        payload["eligibility_summary_reason"] = evaluation.summary_reason
+        payload["eligibility_snapshot_id"] = evaluation.snapshot_id
+    return ShiftAssignmentResponse(**payload)
+
+
 def _require_row(shift_assignment_id: int, db: Session | None = None) -> dict:
     row = shift_assignment_repo.get_shift_assignment_by_id(shift_assignment_id, db)
     if row is None:
@@ -30,10 +38,13 @@ def _require_row(shift_assignment_id: int, db: Session | None = None) -> dict:
     return row
 
 
-# 检查是否存在重复业务数据，供新增和更新流程复用。
 def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int | None = None) -> bool:
     rows = shift_assignment_repo.list_shift_assignments(
-        payload["shift_plan_id"], payload["worker_id"], payload["workstation_id"], None, db
+        payload["shift_plan_id"],
+        payload["worker_id"],
+        payload["workstation_id"],
+        None,
+        db,
     )
     for row in rows:
         if exclude_id is not None and row["id"] == exclude_id:
@@ -42,7 +53,6 @@ def _exists_duplicate(payload: dict, db: Session | None = None, exclude_id: int 
     return False
 
 
-# 校验关联资源是否存在，并检查跨实体引用是否合法。
 def _validate_links(payload: dict, db: Session | None = None) -> None:
     if shift_plan_repo.get_shift_plan_by_id(payload["shift_plan_id"], db) is None:
         raise NotFoundError(f"Shift plan {payload['shift_plan_id']} not found")
@@ -64,7 +74,7 @@ def list_shift_assignments(
 
 
 def get_shift_assignment(shift_assignment_id: int, db: Session | None = None) -> ShiftAssignmentResponse:
-    return _to_response(_require_row(shift_assignment_id, db))
+    return _attach_eligibility(_require_row(shift_assignment_id, db))
 
 
 def create_shift_assignment(data: ShiftAssignmentCreate, db: Session | None = None) -> ShiftAssignmentResponse:
@@ -72,8 +82,20 @@ def create_shift_assignment(data: ShiftAssignmentCreate, db: Session | None = No
     _validate_links(payload, db)
     if _exists_duplicate(payload, db):
         raise ConflictError("Shift assignment already exists")
+    evaluation = eligibility_service.evaluate_shift_assignment_payload(
+        shift_plan_id=payload["shift_plan_id"],
+        worker_id=payload["worker_id"],
+        workstation_id=payload["workstation_id"],
+        assignment_type=payload["assignment_type"],
+        assigned_role=payload.get("assigned_role"),
+        db=db,
+    )
+    if evaluation.status == "blocked":
+        raise ValidationError(evaluation.summary_reason)
     row = shift_assignment_repo.create_shift_assignment(payload, db)
-    return _to_response(row)
+    if evaluation.snapshot_id is not None:
+        eligibility_service.link_snapshot_to_shift_assignment(evaluation.snapshot_id, row["id"], db)
+    return _attach_eligibility(row, evaluation)
 
 
 def update_shift_assignment(
@@ -86,10 +108,23 @@ def update_shift_assignment(
     _validate_links(payload, db)
     if _exists_duplicate(payload, db, exclude_id=shift_assignment_id):
         raise ConflictError("Shift assignment already exists")
+    evaluation = eligibility_service.evaluate_shift_assignment_payload(
+        shift_plan_id=payload["shift_plan_id"],
+        worker_id=payload["worker_id"],
+        workstation_id=payload["workstation_id"],
+        assignment_type=payload["assignment_type"],
+        assigned_role=payload.get("assigned_role"),
+        existing_shift_assignment_id=shift_assignment_id,
+        db=db,
+    )
+    if evaluation.status == "blocked":
+        raise ValidationError(evaluation.summary_reason)
     row = shift_assignment_repo.update_shift_assignment(shift_assignment_id, data.model_dump(exclude_unset=True), db)
     if row is None:
         raise NotFoundError(f"Shift assignment {shift_assignment_id} not found")
-    return _to_response(row)
+    if evaluation.snapshot_id is not None:
+        eligibility_service.link_snapshot_to_shift_assignment(evaluation.snapshot_id, row["id"], db)
+    return _attach_eligibility(row, evaluation)
 
 
 def delete_shift_assignment(shift_assignment_id: int, db: Session | None = None) -> dict[str, str]:

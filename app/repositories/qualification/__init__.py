@@ -32,6 +32,12 @@ from app.repositories.qualification.worker_certification import (
     list_worker_certifications,
     update_worker_certification,
 )
+from app.repositories.qualification.worker_eligibility_snapshot import (
+    create_worker_eligibility_snapshot,
+    get_worker_eligibility_snapshot_by_id,
+    list_worker_eligibility_snapshots,
+    update_worker_eligibility_snapshot,
+)
 from app.repositories.qualification.worker_safety_training import (
     create_worker_safety_training,
     delete_worker_safety_training,
@@ -60,16 +66,20 @@ __all__ = [
     "get_safety_training_by_id",
     "get_worker_certification_by_id",
     "get_worker_certification_by_worker_and_certification",
+    "get_worker_eligibility_snapshot_by_id",
     "get_worker_safety_training_by_id",
     "get_worker_safety_training_by_worker_and_training",
     "list_certifications",
     "list_equipment_authorizations",
     "list_safety_trainings",
     "list_worker_certifications",
+    "list_worker_eligibility_snapshots",
     "list_worker_safety_trainings",
+    "create_worker_eligibility_snapshot",
     "update_certification",
     "update_equipment_authorization",
     "update_safety_training",
     "update_worker_certification",
+    "update_worker_eligibility_snapshot",
     "update_worker_safety_training",
 ]
