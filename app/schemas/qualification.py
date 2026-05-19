@@ -192,90 +192,6 @@ class EquipmentAuthorizationListResponse(BaseModel):
     total: int
 
 
-class WorkstationSkillRequirementCreate(BaseModel):
-    workstation_id: int
-    skill_id: int
-    required_proficiency: str
-    mandatory: bool = True
-
-
-class WorkstationSkillRequirementUpdate(BaseModel):
-    workstation_id: int | None = None
-    skill_id: int | None = None
-    required_proficiency: str | None = None
-    mandatory: bool | None = None
-
-
-class WorkstationSkillRequirementResponse(BaseModel):
-    id: int
-    workstation_id: int
-    skill_id: int
-    required_proficiency: str
-    mandatory: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class WorkstationSkillRequirementListResponse(BaseModel):
-    workstation_skill_requirements: list[WorkstationSkillRequirementResponse]
-    total: int
-
-
-class WorkstationCertificationRequirementCreate(BaseModel):
-    workstation_id: int
-    certification_id: int
-    mandatory: bool = True
-
-
-class WorkstationCertificationRequirementUpdate(BaseModel):
-    workstation_id: int | None = None
-    certification_id: int | None = None
-    mandatory: bool | None = None
-
-
-class WorkstationCertificationRequirementResponse(BaseModel):
-    id: int
-    workstation_id: int
-    certification_id: int
-    mandatory: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class WorkstationCertificationRequirementListResponse(BaseModel):
-    workstation_certification_requirements: list[WorkstationCertificationRequirementResponse]
-    total: int
-
-
-class WorkstationEquipmentRequirementCreate(BaseModel):
-    workstation_id: int
-    equipment_code: str
-    required_authorization_level: str
-    mandatory: bool = True
-
-
-class WorkstationEquipmentRequirementUpdate(BaseModel):
-    workstation_id: int | None = None
-    equipment_code: str | None = None
-    required_authorization_level: str | None = None
-    mandatory: bool | None = None
-
-
-class WorkstationEquipmentRequirementResponse(BaseModel):
-    id: int
-    workstation_id: int
-    equipment_code: str
-    required_authorization_level: str
-    mandatory: bool
-    created_at: datetime
-    updated_at: datetime
-
-
-class WorkstationEquipmentRequirementListResponse(BaseModel):
-    workstation_equipment_requirements: list[WorkstationEquipmentRequirementResponse]
-    total: int
-
-
 __all__ = [
     "CertificationCreate",
     "CertificationListResponse",
@@ -297,16 +213,4 @@ __all__ = [
     "WorkerSafetyTrainingListResponse",
     "WorkerSafetyTrainingResponse",
     "WorkerSafetyTrainingUpdate",
-    "WorkstationCertificationRequirementCreate",
-    "WorkstationCertificationRequirementListResponse",
-    "WorkstationCertificationRequirementResponse",
-    "WorkstationCertificationRequirementUpdate",
-    "WorkstationEquipmentRequirementCreate",
-    "WorkstationEquipmentRequirementListResponse",
-    "WorkstationEquipmentRequirementResponse",
-    "WorkstationEquipmentRequirementUpdate",
-    "WorkstationSkillRequirementCreate",
-    "WorkstationSkillRequirementListResponse",
-    "WorkstationSkillRequirementResponse",
-    "WorkstationSkillRequirementUpdate",
 ]

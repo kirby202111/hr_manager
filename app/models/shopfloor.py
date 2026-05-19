@@ -14,11 +14,6 @@ ORM_EVAL_HELPERS = {"foreign": foreign}
 if TYPE_CHECKING:
     from app.models.organization import OrganizationUnit
     from app.models.production import ProductionOperation, ProductionOrder
-    from app.models.qualification import (
-        WorkstationCertificationRequirement,
-        WorkstationEquipmentRequirement,
-        WorkstationSkillRequirement,
-    )
     from app.models.risk import OperationalRiskSignal
     from app.models.staffing import ShiftAssignment, ShiftPlan
     from app.models.workforce import Worker, WorkerAssignment
@@ -140,27 +135,6 @@ class Workstation(Base, IdentityMixin, TimestampMixin, DictMixin):
         back_populates="workstations",
         primaryjoin="foreign(Workstation.production_line_id) == ProductionLine.id",
         foreign_keys=[production_line_id],
-    )
-    skill_requirements: Mapped[list[WorkstationSkillRequirement]] = relationship(
-        "WorkstationSkillRequirement",
-        back_populates="workstation",
-        primaryjoin="Workstation.id == foreign(WorkstationSkillRequirement.workstation_id)",
-        foreign_keys="WorkstationSkillRequirement.workstation_id",
-        cascade="all, delete-orphan",
-    )
-    certification_requirements: Mapped[list[WorkstationCertificationRequirement]] = relationship(
-        "WorkstationCertificationRequirement",
-        back_populates="workstation",
-        primaryjoin="Workstation.id == foreign(WorkstationCertificationRequirement.workstation_id)",
-        foreign_keys="WorkstationCertificationRequirement.workstation_id",
-        cascade="all, delete-orphan",
-    )
-    equipment_requirements: Mapped[list[WorkstationEquipmentRequirement]] = relationship(
-        "WorkstationEquipmentRequirement",
-        back_populates="workstation",
-        primaryjoin="Workstation.id == foreign(WorkstationEquipmentRequirement.workstation_id)",
-        foreign_keys="WorkstationEquipmentRequirement.workstation_id",
-        cascade="all, delete-orphan",
     )
     operations: Mapped[list[ProductionOperation]] = relationship(
         "ProductionOperation",

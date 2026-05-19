@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, Float, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Date, Float, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 
 from app.models.base import Base, DictMixin, IdentityMixin, TimestampMixin
@@ -14,7 +14,6 @@ ORM_EVAL_HELPERS = {"foreign": foreign}
 
 if TYPE_CHECKING:
     from app.models.capability import Skill
-    from app.models.shopfloor import Workstation
     from app.models.workforce import Worker
 
 
@@ -33,13 +32,6 @@ class Certification(Base, IdentityMixin, TimestampMixin, DictMixin):
         back_populates="certification",
         primaryjoin="Certification.id == foreign(WorkerCertification.certification_id)",
         foreign_keys="WorkerCertification.certification_id",
-        cascade="all, delete-orphan",
-    )
-    workstation_requirements: Mapped[list[WorkstationCertificationRequirement]] = relationship(
-        "WorkstationCertificationRequirement",
-        back_populates="certification",
-        primaryjoin="Certification.id == foreign(WorkstationCertificationRequirement.certification_id)",
-        foreign_keys="WorkstationCertificationRequirement.certification_id",
         cascade="all, delete-orphan",
     )
     safety_trainings: Mapped[list[SafetyTraining]] = relationship(
@@ -163,75 +155,10 @@ class EquipmentAuthorization(Base, IdentityMixin, TimestampMixin, DictMixin):
     )
 
 
-class WorkstationSkillRequirement(Base, IdentityMixin, TimestampMixin, DictMixin):
-    __tablename__ = "workstation_skill_requirements"
-    __table_args__ = (UniqueConstraint("workstation_id", "skill_id"),)
-
-    workstation_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    skill_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    required_proficiency: Mapped[str] = mapped_column(String(20), nullable=False)
-    mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
-    workstation: Mapped[Workstation] = relationship(
-        "Workstation",
-        back_populates="skill_requirements",
-        primaryjoin="foreign(WorkstationSkillRequirement.workstation_id) == Workstation.id",
-        foreign_keys=[workstation_id],
-    )
-    skill: Mapped[Skill] = relationship(
-        "Skill",
-        back_populates="workstation_requirements",
-        primaryjoin="foreign(WorkstationSkillRequirement.skill_id) == Skill.id",
-        foreign_keys=[skill_id],
-    )
-
-
-class WorkstationCertificationRequirement(Base, IdentityMixin, TimestampMixin, DictMixin):
-    __tablename__ = "workstation_certification_requirements"
-    __table_args__ = (UniqueConstraint("workstation_id", "certification_id"),)
-
-    workstation_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    certification_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
-    workstation: Mapped[Workstation] = relationship(
-        "Workstation",
-        back_populates="certification_requirements",
-        primaryjoin="foreign(WorkstationCertificationRequirement.workstation_id) == Workstation.id",
-        foreign_keys=[workstation_id],
-    )
-    certification: Mapped[Certification] = relationship(
-        "Certification",
-        back_populates="workstation_requirements",
-        primaryjoin="foreign(WorkstationCertificationRequirement.certification_id) == Certification.id",
-        foreign_keys=[certification_id],
-    )
-
-
-class WorkstationEquipmentRequirement(Base, IdentityMixin, TimestampMixin, DictMixin):
-    __tablename__ = "workstation_equipment_requirements"
-    __table_args__ = (UniqueConstraint("workstation_id", "equipment_code"),)
-
-    workstation_id: Mapped[int] = mapped_column(Integer, nullable=False)
-    equipment_code: Mapped[str] = mapped_column(String(100), nullable=False)
-    required_authorization_level: Mapped[str] = mapped_column(String(20), nullable=False)
-    mandatory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-
-    workstation: Mapped[Workstation] = relationship(
-        "Workstation",
-        back_populates="equipment_requirements",
-        primaryjoin="foreign(WorkstationEquipmentRequirement.workstation_id) == Workstation.id",
-        foreign_keys=[workstation_id],
-    )
-
-
 __all__ = [
     "Certification",
     "EquipmentAuthorization",
     "SafetyTraining",
     "WorkerCertification",
     "WorkerSafetyTraining",
-    "WorkstationCertificationRequirement",
-    "WorkstationEquipmentRequirement",
-    "WorkstationSkillRequirement",
 ]

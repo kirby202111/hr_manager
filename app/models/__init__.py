@@ -10,9 +10,6 @@ from app.models.qualification import (
     SafetyTraining,
     WorkerCertification,
     WorkerSafetyTraining,
-    WorkstationCertificationRequirement,
-    WorkstationEquipmentRequirement,
-    WorkstationSkillRequirement,
 )
 from app.models.risk import OperationalRiskReview, OperationalRiskSignal
 from app.models.shopfloor import ProductionLine, ProductionTeam, Workstation
@@ -43,7 +40,4 @@ __all__ = [
     "WorkerSafetyTraining",
     "WorkerSkill",
     "Workstation",
-    "WorkstationCertificationRequirement",
-    "WorkstationEquipmentRequirement",
-    "WorkstationSkillRequirement",
 ]
