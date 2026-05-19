@@ -47,6 +47,41 @@ def get_worker_eligibility_snapshot_by_id(snapshot_id: int, db: Session | None =
         return row.to_dict() if row else None
 
 
+def get_latest_worker_eligibility_snapshot_by_shift_assignment_id(
+    shift_assignment_id: int,
+    db: Session | None = None,
+) -> dict | None:
+    with db_session(db) as session:
+        row = (
+            session.query(WorkerEligibilitySnapshot)
+            .filter(WorkerEligibilitySnapshot.shift_assignment_id == shift_assignment_id)
+            .order_by(WorkerEligibilitySnapshot.checked_at.desc(), WorkerEligibilitySnapshot.id.desc())
+            .first()
+        )
+        return row.to_dict() if row else None
+
+
+def list_latest_worker_eligibility_snapshots_by_shift_assignment_ids(
+    shift_assignment_ids: list[int],
+    db: Session | None = None,
+) -> dict[int, dict]:
+    if not shift_assignment_ids:
+        return {}
+    with db_session(db) as session:
+        rows = (
+            session.query(WorkerEligibilitySnapshot)
+            .filter(WorkerEligibilitySnapshot.shift_assignment_id.in_(shift_assignment_ids))
+            .order_by(WorkerEligibilitySnapshot.checked_at.desc(), WorkerEligibilitySnapshot.id.desc())
+            .all()
+        )
+        snapshots_by_assignment: dict[int, dict] = {}
+        for row in rows:
+            if row.shift_assignment_id is None or row.shift_assignment_id in snapshots_by_assignment:
+                continue
+            snapshots_by_assignment[row.shift_assignment_id] = row.to_dict()
+        return snapshots_by_assignment
+
+
 def create_worker_eligibility_snapshot(data: dict, db: Session | None = None) -> dict:
     with db_session(db) as session:
         row = WorkerEligibilitySnapshot(**data)

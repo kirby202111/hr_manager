@@ -68,6 +68,35 @@ def _snapshot_to_response(row: dict) -> WorkerEligibilitySnapshotResponse:
     return WorkerEligibilitySnapshotResponse(**row)
 
 
+def _build_evaluation_response(
+    *,
+    status: str,
+    summary_reason: str,
+    worker_id: int,
+    workstation_id: int,
+    work_date: date,
+    details: list[EligibilityDetailResponse],
+    checked_at: datetime,
+    production_operation_id: int | None = None,
+    shift_plan_id: int | None = None,
+    shift_assignment_id: int | None = None,
+    snapshot_id: int | None = None,
+) -> WorkerEligibilityEvaluationResponse:
+    return WorkerEligibilityEvaluationResponse(
+        status=status,
+        summary_reason=summary_reason,
+        snapshot_id=snapshot_id,
+        worker_id=worker_id,
+        workstation_id=workstation_id,
+        production_operation_id=production_operation_id,
+        shift_plan_id=shift_plan_id,
+        shift_assignment_id=shift_assignment_id,
+        work_date=work_date,
+        details=details,
+        checked_at=checked_at,
+    )
+
+
 def _require_worker(worker_id: int, db: Session | None = None) -> dict:
     row = worker_repo.get_worker_by_id(worker_id, db)
     if row is None:
@@ -93,6 +122,20 @@ def _require_operation(production_operation_id: int, db: Session | None = None) 
     row = production_operation_repo.get_production_operation_by_id(production_operation_id, db)
     if row is None:
         raise NotFoundError(f"Production operation {production_operation_id} not found")
+    return row
+
+
+def _require_operation_for_workstation(
+    production_operation_id: int,
+    workstation_id: int,
+    db: Session | None = None,
+) -> dict:
+    row = _require_operation(production_operation_id, db)
+    if row["workstation_id"] != workstation_id:
+        raise ValidationError(
+            "Production operation does not belong to workstation",
+            error_code="operation_workstation_mismatch",
+        )
     return row
 
 
@@ -328,25 +371,35 @@ def _resolve_operation_for_assignment(
         db=db,
     )
     if not rows:
-        return None, []
+        return None, [
+            _build_detail(
+                dimension="operation_context",
+                requirement_type="operation_context",
+                reason_code="MISSING_OPERATION_CONTEXT",
+                message="Production order does not define an operation for the workstation",
+                status="blocked",
+                severity="error",
+                expected_value="1",
+                actual_value="0",
+            )
+        ]
     active_rows = [row for row in rows if row["status"] in ACTIVE_OPERATION_STATUSES]
     candidates = active_rows or rows
     candidates.sort(key=lambda row: (row["sequence_number"], row["id"]))
-    details: list[EligibilityDetailResponse] = []
     if len(candidates) > 1:
-        details.append(
+        return None, [
             _build_detail(
                 dimension="operation_context",
                 requirement_type="operation_context",
                 reason_code="AMBIGUOUS_OPERATION_CONTEXT",
-                message="Multiple operations matched the workstation; using the earliest sequence",
-                status="warning",
-                severity="warning",
+                message="Multiple operations matched the workstation for the production order",
+                status="blocked",
+                severity="error",
                 actual_value=str(len(candidates)),
                 expected_value="1",
             )
-        )
-    return candidates[0]["id"], details
+        ]
+    return candidates[0]["id"], []
 
 
 def _evaluate_skills(
@@ -763,7 +816,7 @@ def evaluate_worker_eligibility(
     worker = _require_worker(worker_id, db)
     _require_workstation(workstation_id, db)
     if production_operation_id is not None:
-        _require_operation(production_operation_id, db)
+        _require_operation_for_workstation(production_operation_id, workstation_id, db)
 
     requirements = _merge_workstation_and_operation_requirements(workstation_id, production_operation_id, db)
     details = _evaluate_worker_status(worker, work_date)
@@ -807,7 +860,7 @@ def evaluate_worker_eligibility(
         )
         snapshot_id = snapshot["id"]
 
-    return WorkerEligibilityEvaluationResponse(
+    return _build_evaluation_response(
         status=status,
         summary_reason=summary_reason,
         snapshot_id=snapshot_id,
@@ -836,6 +889,39 @@ def evaluate_shift_assignment_payload(
     del assignment_type, assigned_role
     shift_plan = _require_shift_plan(shift_plan_id, db)
     production_operation_id, operation_details = _resolve_operation_for_assignment(shift_plan, workstation_id, db)
+    if operation_details:
+        checked_at = datetime.now(UTC).replace(tzinfo=None)
+        summary_reason = operation_details[0].message
+        snapshot_id: int | None = None
+        if persist_snapshot:
+            snapshot = save_eligibility_snapshot(
+                worker_id=worker_id,
+                workstation_id=workstation_id,
+                production_operation_id=None,
+                shift_plan_id=shift_plan_id,
+                shift_assignment_id=existing_shift_assignment_id,
+                work_date=shift_plan["work_date"],
+                status="blocked",
+                summary_reason=summary_reason,
+                details=operation_details,
+                checked_at=checked_at,
+                source_context="assignment_update" if existing_shift_assignment_id is not None else "assignment_create",
+                db=db,
+            )
+            snapshot_id = snapshot["id"]
+        return _build_evaluation_response(
+            status="blocked",
+            summary_reason=summary_reason,
+            snapshot_id=snapshot_id,
+            worker_id=worker_id,
+            workstation_id=workstation_id,
+            production_operation_id=None,
+            shift_plan_id=shift_plan_id,
+            shift_assignment_id=existing_shift_assignment_id,
+            work_date=shift_plan["work_date"],
+            details=operation_details,
+            checked_at=checked_at,
+        )
     evaluation = evaluate_worker_eligibility(
         worker_id=worker_id,
         workstation_id=workstation_id,
@@ -847,27 +933,9 @@ def evaluate_shift_assignment_payload(
         persist_snapshot=persist_snapshot,
         db=db,
     )
-    details = list(evaluation.details) + operation_details
-    status = evaluation.status
-    summary_reason = evaluation.summary_reason
-    if status == "eligible" and operation_details:
-        status = "warning"
-        summary_reason = operation_details[0].message
-    elif status == "warning" and operation_details:
-        details = operation_details + list(evaluation.details)
-    if evaluation.snapshot_id is not None and operation_details:
-        snapshot_repo.update_worker_eligibility_snapshot(
-            evaluation.snapshot_id,
-            {
-                "status": status,
-                "summary_reason": summary_reason,
-                "detail_json": [_detail_to_dict(detail) for detail in details],
-            },
-            db,
-        )
-    return WorkerEligibilityEvaluationResponse(
-        status=status,
-        summary_reason=summary_reason,
+    return _build_evaluation_response(
+        status=evaluation.status,
+        summary_reason=evaluation.summary_reason,
         snapshot_id=evaluation.snapshot_id,
         worker_id=evaluation.worker_id,
         workstation_id=evaluation.workstation_id,
@@ -875,7 +943,7 @@ def evaluate_shift_assignment_payload(
         shift_plan_id=evaluation.shift_plan_id,
         shift_assignment_id=evaluation.shift_assignment_id,
         work_date=evaluation.work_date,
-        details=details,
+        details=list(evaluation.details),
         checked_at=evaluation.checked_at,
     )
 

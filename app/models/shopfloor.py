@@ -142,7 +142,6 @@ class Workstation(Base, IdentityMixin, TimestampMixin, DictMixin):
         "ProductionOperation",
         back_populates="workstation",
         primaryjoin="Workstation.id == foreign(ProductionOperation.workstation_id)",
-        foreign_keys="ProductionOperation.workstation_id",
     )
     shift_assignments: Mapped[list[ShiftAssignment]] = relationship(
         "ShiftAssignment",

@@ -5,6 +5,7 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.errors import ConflictError, NotFoundError, ValidationError
+from app.repositories.qualification import worker_eligibility_snapshot as snapshot_repo
 from app.repositories.shopfloor import workstation as workstation_repo
 from app.repositories.staffing import shift_assignment as shift_assignment_repo
 from app.repositories.staffing import shift_plan as shift_plan_repo
@@ -28,6 +29,15 @@ def _attach_eligibility(row: dict, evaluation: object | None = None) -> ShiftAss
         payload["eligibility_status"] = evaluation.status
         payload["eligibility_summary_reason"] = evaluation.summary_reason
         payload["eligibility_snapshot_id"] = evaluation.snapshot_id
+    return ShiftAssignmentResponse(**payload)
+
+
+def _attach_eligibility_snapshot(row: dict, snapshot: dict | None = None) -> ShiftAssignmentResponse:
+    payload = dict(row)
+    if snapshot is not None:
+        payload["eligibility_status"] = snapshot["status"]
+        payload["eligibility_summary_reason"] = snapshot["summary_reason"]
+        payload["eligibility_snapshot_id"] = snapshot["id"]
     return ShiftAssignmentResponse(**payload)
 
 
@@ -70,11 +80,22 @@ def list_shift_assignments(
     db: Session | None = None,
 ) -> ShiftAssignmentListResponse:
     rows = shift_assignment_repo.list_shift_assignments(shift_plan_id, worker_id, workstation_id, status, db)
-    return ShiftAssignmentListResponse(shift_assignments=[_to_response(row) for row in rows], total=len(rows))
+    snapshots_by_assignment = snapshot_repo.list_latest_worker_eligibility_snapshots_by_shift_assignment_ids(
+        [row["id"] for row in rows],
+        db,
+    )
+    return ShiftAssignmentListResponse(
+        shift_assignments=[
+            _attach_eligibility_snapshot(row, snapshots_by_assignment.get(row["id"])) for row in rows
+        ],
+        total=len(rows),
+    )
 
 
 def get_shift_assignment(shift_assignment_id: int, db: Session | None = None) -> ShiftAssignmentResponse:
-    return _attach_eligibility(_require_row(shift_assignment_id, db))
+    row = _require_row(shift_assignment_id, db)
+    snapshot = snapshot_repo.get_latest_worker_eligibility_snapshot_by_shift_assignment_id(shift_assignment_id, db)
+    return _attach_eligibility_snapshot(row, snapshot)
 
 
 def create_shift_assignment(data: ShiftAssignmentCreate, db: Session | None = None) -> ShiftAssignmentResponse:

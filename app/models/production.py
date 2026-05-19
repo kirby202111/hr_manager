@@ -90,7 +90,6 @@ class ProductionOperation(Base, IdentityMixin, TimestampMixin, DictMixin):
         "Workstation",
         back_populates="operations",
         primaryjoin="foreign(ProductionOperation.workstation_id) == Workstation.id",
-        foreign_keys=[workstation_id],
     )
     qualification_requirements: Mapped[list[OperationQualificationRequirement]] = relationship(
         "OperationQualificationRequirement",
