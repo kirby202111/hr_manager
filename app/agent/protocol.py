@@ -54,6 +54,7 @@ class AgentTool:
     description: str
     parameters: dict[str, Any]
     fn: Callable[..., Any]
+    context_defaults: dict[str, str] = field(default_factory=dict)
 
     def to_openai_tool(self) -> dict[str, Any]:
         return {
@@ -64,6 +65,12 @@ class AgentTool:
                 "parameters": self.parameters,
             },
         }
+
+    def invoke(self, arguments: dict[str, Any], context: ToolExecutionContext) -> Any:
+        payload = dict(arguments)
+        for argument_name, context_field in self.context_defaults.items():
+            payload.setdefault(argument_name, getattr(context, context_field))
+        return self.fn(**payload)
 
 
 @dataclass(slots=True)

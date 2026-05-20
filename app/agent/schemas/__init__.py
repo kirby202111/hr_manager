@@ -1,6 +1,14 @@
 """Agent runtime schemas."""
 
 from app.agent.schemas.chat import ChatRequest, ChatResponse, SessionListResponse
+from app.agent.schemas.knowledge_base import (
+    KnowledgeDocumentDeleteResponse,
+    KnowledgeDocumentIngestResponse,
+    KnowledgeDocumentListResponse,
+    KnowledgeDocumentResponse,
+    KnowledgeSearchResponse,
+    KnowledgeSearchResult,
+)
 from app.agent.schemas.memory import (
     ConversationMessageListResponse,
     ConversationMessageResponse,
@@ -18,6 +26,12 @@ __all__ = [
     "ChatResponse",
     "ConversationMessageListResponse",
     "ConversationMessageResponse",
+    "KnowledgeDocumentDeleteResponse",
+    "KnowledgeDocumentIngestResponse",
+    "KnowledgeDocumentListResponse",
+    "KnowledgeDocumentResponse",
+    "KnowledgeSearchResponse",
+    "KnowledgeSearchResult",
     "MemoryCreate",
     "MemoryListResponse",
     "MemoryResponse",

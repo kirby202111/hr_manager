@@ -1,5 +1,11 @@
 """Agent runtime repositories."""
 
+from app.agent.repositories.knowledge_base import (
+    KnowledgeBaseRepository,
+    KnowledgeDocumentRow,
+    KnowledgeSearchRow,
+    get_repository,
+)
 from app.agent.repositories.runtime import (
     count_messages_by_session,
     create_memory,
@@ -19,6 +25,9 @@ from app.agent.repositories.runtime import (
 )
 
 __all__ = [
+    "KnowledgeBaseRepository",
+    "KnowledgeDocumentRow",
+    "KnowledgeSearchRow",
     "count_messages_by_session",
     "create_memory",
     "create_message",
@@ -27,6 +36,7 @@ __all__ = [
     "delete_messages_by_session",
     "get_memory_by_id",
     "get_messages_by_session",
+    "get_repository",
     "get_reminders_by_memory",
     "list_memories",
     "list_sessions",
