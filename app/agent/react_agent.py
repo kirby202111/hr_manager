@@ -16,9 +16,10 @@ from app.config import settings
 
 try:
     from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
-    from langchain_openai import ChatOpenAI
     from langgraph.errors import GraphRecursionError
     from langgraph.graph import END, START, MessagesState, StateGraph
+
+    from app.agent.deepseek_chat import DeepSeekChatOpenAI
 
     _LANGGRAPH_IMPORT_ERROR: ImportError | None = None
 except ImportError as exc:  # pragma: no cover - handled gracefully at runtime
@@ -27,7 +28,7 @@ except ImportError as exc:  # pragma: no cover - handled gracefully at runtime
     HumanMessage = Any
     SystemMessage = Any
     ToolMessage = Any
-    ChatOpenAI = None
+    DeepSeekChatOpenAI = None
     GraphRecursionError = RuntimeError
     MessagesState = dict[str, Any]
     StateGraph = None
@@ -75,8 +76,8 @@ class LangGraphAgent(BaseAgent):
         self._use_routing = use_routing
         self._client = None
 
-        if ChatOpenAI is not None and settings.deepseek_api_key:
-            self._client = ChatOpenAI(
+        if DeepSeekChatOpenAI is not None and settings.deepseek_api_key:
+            self._client = DeepSeekChatOpenAI(
                 api_key=settings.deepseek_api_key,
                 base_url=settings.deepseek_base_url,
                 model=settings.deepseek_model,
@@ -307,7 +308,20 @@ class LangGraphAgent(BaseAgent):
 
     def _load_langchain_messages(self, session_id: str) -> list[BaseMessage]:
         messages: list[BaseMessage] = []
+        skip_legacy_tool_results = False
         for message in self._history.get_messages(session_id):
+            role = message.get("role")
+            if role == "assistant" and message.get("tool_calls") and not message.get("reasoning_content"):
+                skip_legacy_tool_results = True
+                logger.warning(
+                    "Skipping legacy assistant tool trace without reasoning_content for session %s",
+                    session_id,
+                )
+                continue
+            if role == "tool" and skip_legacy_tool_results:
+                continue
+            if role != "tool":
+                skip_legacy_tool_results = False
             converted = self._history_to_langchain_message(message)
             if converted is not None:
                 messages.append(converted)
@@ -321,8 +335,13 @@ class LangGraphAgent(BaseAgent):
         if role == "user":
             return HumanMessage(content=content)
         if role == "assistant":
+            additional_kwargs: dict[str, Any] = {}
+            reasoning_content = message.get("reasoning_content")
+            if isinstance(reasoning_content, str) and reasoning_content:
+                additional_kwargs["reasoning_content"] = reasoning_content
             return AIMessage(
                 content=content,
+                additional_kwargs=additional_kwargs,
                 tool_calls=self._history_tool_calls_to_langchain(message.get("tool_calls")),
             )
         if role == "tool":
@@ -362,11 +381,15 @@ class LangGraphAgent(BaseAgent):
         if isinstance(message, HumanMessage):
             return {"role": "user", "content": self._content_to_text(message.content)}
         if isinstance(message, AIMessage):
-            return {
+            payload = {
                 "role": "assistant",
                 "content": self._content_to_text(message.content),
                 "tool_calls": self._langchain_tool_calls_to_history(message.tool_calls),
             }
+            reasoning_content = self._extract_reasoning_content(message)
+            if reasoning_content is not None:
+                payload["reasoning_content"] = reasoning_content
+            return payload
         if isinstance(message, ToolMessage):
             return {
                 "role": "tool",
@@ -429,6 +452,11 @@ class LangGraphAgent(BaseAgent):
                 }
             )
         return normalized or None
+
+    @staticmethod
+    def _extract_reasoning_content(message: AIMessage) -> str | None:
+        reasoning_content = getattr(message, "additional_kwargs", {}).get("reasoning_content")
+        return reasoning_content if isinstance(reasoning_content, str) and reasoning_content else None
 
     @staticmethod
     def _extract_tool_names(message: AIMessage) -> list[str]:
