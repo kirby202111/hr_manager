@@ -1,4 +1,4 @@
-"""Agent runtime repositories for memories, reminders, and conversations."""
+"""Agent runtime repositories for memories, reminders, conversations, and onboarding state."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.agent.models import AgentMemory, ConversationMessage, MemoryReminder
+from app.agent.models import AgentMemory, ConversationMessage, MemoryReminder, OnboardingCase
 from app.database import db_session
 
 
@@ -183,6 +183,94 @@ def delete_messages_by_session(session_id: str, db: Session | None = None) -> in
         return int(deleted)
 
 
+def get_active_onboarding_case(
+    session_id: str,
+    user_tag: str,
+    intent: str = "worker_onboarding",
+    db: Session | None = None,
+) -> dict | None:
+    with db_session(db) as session:
+        row = (
+            session.query(OnboardingCase)
+            .filter(
+                OnboardingCase.session_id == session_id,
+                OnboardingCase.user_tag == user_tag,
+                OnboardingCase.intent == intent,
+                OnboardingCase.is_active.is_(True),
+            )
+            .first()
+        )
+        return row.to_dict() if row else None
+
+
+def create_onboarding_case(data: dict, db: Session | None = None) -> dict:
+    with db_session(db) as session:
+        row = OnboardingCase(**data)
+        session.add(row)
+        session.flush()
+        session.refresh(row)
+        return row.to_dict()
+
+
+def update_onboarding_case(
+    session_id: str,
+    user_tag: str,
+    data: dict,
+    intent: str = "worker_onboarding",
+    db: Session | None = None,
+) -> dict | None:
+    with db_session(db) as session:
+        row = (
+            session.query(OnboardingCase)
+            .filter(
+                OnboardingCase.session_id == session_id,
+                OnboardingCase.user_tag == user_tag,
+                OnboardingCase.intent == intent,
+            )
+            .first()
+        )
+        if row is None:
+            return None
+        _apply_updates(row, data)
+        session.flush()
+        session.refresh(row)
+        return row.to_dict()
+
+
+def upsert_onboarding_case(
+    session_id: str,
+    user_tag: str,
+    data: dict,
+    intent: str = "worker_onboarding",
+    db: Session | None = None,
+) -> dict:
+    row = update_onboarding_case(session_id, user_tag, data, intent=intent, db=db)
+    if row is not None:
+        return row
+    payload = {"session_id": session_id, "user_tag": user_tag, "intent": intent, **data}
+    return create_onboarding_case(payload, db)
+
+
+def reset_onboarding_case(
+    session_id: str,
+    user_tag: str,
+    intent: str = "worker_onboarding",
+    db: Session | None = None,
+) -> int:
+    with db_session(db) as session:
+        deleted = (
+            session.query(OnboardingCase)
+            .filter(
+                OnboardingCase.session_id == session_id,
+                OnboardingCase.user_tag == user_tag,
+                OnboardingCase.intent == intent,
+            )
+            .delete(synchronize_session=False)
+        )
+        session.flush()
+        return int(deleted)
+
+
 def list_sessions(db: Session | None = None) -> list[str]:
     with db_session(db) as session:
         rows = (
@@ -210,9 +298,11 @@ __all__ = [
     "count_messages_by_session",
     "create_memory",
     "create_message",
+    "create_onboarding_case",
     "create_reminder",
     "delete_memory",
     "delete_messages_by_session",
+    "get_active_onboarding_case",
     "get_memory_by_id",
     "get_messages_by_session",
     "get_reminders_by_memory",
@@ -220,6 +310,9 @@ __all__ = [
     "list_sessions",
     "list_sessions_by_user_tag",
     "list_triggered_reminders",
+    "reset_onboarding_case",
     "trim_session_messages",
+    "update_onboarding_case",
     "update_memory",
+    "upsert_onboarding_case",
 ]

@@ -12,6 +12,7 @@ from app.agent.protocol import BaseHistoryStore
 from app.agent.react_agent import ReActAgent
 from app.agent.schemas.chat import ChatRequest, ChatResponse, SessionListResponse
 from app.agent.schemas.memory import ConversationMessageListResponse
+from app.agent.schemas.onboarding import SessionStateResponse
 from app.agent.schemas.skill import SkillListResponse
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skills import register_all_skills
@@ -82,9 +83,20 @@ def get_session_messages(session_id: str) -> ConversationMessageListResponse:
     return get_session_messages_service(session_id)
 
 
+@router.get("/sessions/{session_id}/state", response_model=SessionStateResponse)
+def get_session_state(session_id: str, user_tag: str | None = None) -> SessionStateResponse:
+    from app.agent.services.onboarding import get_session_state as get_session_state_service
+
+    effective_user_tag = user_tag or settings.default_user_tag
+    return get_session_state_service(session_id, effective_user_tag)
+
+
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, request: Request) -> dict[str, str]:
+def delete_session(session_id: str, request: Request, user_tag: str | None = None) -> dict[str, str]:
+    from app.agent.services.onboarding import reset_case
+
     request.app.state.history_store.clear(session_id)
+    reset_case(session_id, user_tag or settings.default_user_tag)
     return {"message": f"Session {session_id} cleared"}
 
 

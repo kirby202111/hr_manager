@@ -9,6 +9,7 @@ from typing import Any
 
 from openai import APIError, APITimeoutError, OpenAI, RateLimitError
 
+from app.agent.onboarding_orchestrator import OnboardingOrchestrator
 from app.agent.protocol import AgentTool, BaseHistoryStore
 from app.agent.skill_registry import SkillRegistry
 from app.agent.skill_router import SkillRouter
@@ -18,10 +19,17 @@ logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are the Workforce Ops assistant.
 
-You help users with durable memory, reminders, and cross-session context.
+You help users with durable memory, reminders, cross-session context, and factory-worker onboarding.
 Use tools whenever they help you answer accurately.
 When information is missing, say so plainly.
 Do not invent stored facts or reminders.
+For worker onboarding:
+- check for duplicate workers before creating a new worker profile
+- ask only for the missing fields needed for the next action
+- execute low-risk create and qualification tools once the required facts are known
+- update the onboarding case as progress changes
+- run workstation eligibility checks after key onboarding updates
+- end with the current status, missing requirements, and next step
 """
 
 
@@ -37,6 +45,7 @@ class ReActAgent:
         self._history = history_store
         self._registry = skill_registry
         self._router = SkillRouter()
+        self._onboarding = OnboardingOrchestrator()
         self._use_routing = use_routing
         self._client: OpenAI | None = None
         if settings.deepseek_api_key:
@@ -48,6 +57,7 @@ class ReActAgent:
     def chat(self, session_id: str, message: str, user_tag: str | None = None) -> str:
         effective_tag = user_tag or settings.default_user_tag
         self._init_session(session_id, effective_tag)
+        self._onboarding.prepare_turn(session_id, effective_tag, message)
         self._history.add_message(session_id, {"role": "user", "content": message}, user_tag=effective_tag)
 
         if self._client is None:
@@ -56,10 +66,10 @@ class ReActAgent:
             return reply
 
         tools, tool_map = self._resolve_tools(message)
-        messages = self._history.get_messages(session_id)
         final_reply = ""
 
         for _ in range(settings.agent_max_iterations):
+            messages = self._build_completion_messages(session_id, effective_tag)
             response = self._create_completion(messages, tools)
             choice = response.choices[0]
             assistant_message = choice.message.model_dump()
@@ -70,7 +80,6 @@ class ReActAgent:
                 break
 
             self._execute_tool_calls(session_id, effective_tag, assistant_message["tool_calls"], tool_map)
-            messages = self._history.get_messages(session_id)
         else:
             final_reply = "The assistant reached the maximum number of tool iterations."
             self._history.add_message(session_id, {"role": "assistant", "content": final_reply}, user_tag=effective_tag)
@@ -85,6 +94,7 @@ class ReActAgent:
     ) -> AsyncIterator[dict[str, str]]:
         effective_tag = user_tag or settings.default_user_tag
         self._init_session(session_id, effective_tag)
+        self._onboarding.prepare_turn(session_id, effective_tag, message)
         self._history.add_message(session_id, {"role": "user", "content": message}, user_tag=effective_tag)
 
         if self._client is None:
@@ -97,7 +107,7 @@ class ReActAgent:
         tools, tool_map = self._resolve_tools(message)
 
         for _ in range(settings.agent_max_iterations):
-            messages = self._history.get_messages(session_id)
+            messages = self._build_completion_messages(session_id, effective_tag)
             response = self._create_completion(messages, tools)
             choice = response.choices[0]
             assistant_message = choice.message.model_dump()
@@ -142,6 +152,15 @@ class ReActAgent:
         tool_map = {tool.name: tool for tool in tools}
         return [tool.to_openai_tool() for tool in tools], tool_map
 
+    def _build_completion_messages(self, session_id: str, user_tag: str) -> list[dict[str, Any]]:
+        messages = self._history.get_messages(session_id)
+        runtime_messages = self._onboarding.build_runtime_messages(session_id, user_tag)
+        if not runtime_messages:
+            return messages
+        if messages and messages[0].get("role") == "system":
+            return [messages[0], *runtime_messages, *messages[1:]]
+        return [*runtime_messages, *messages]
+
     def _create_completion(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Any:
         assert self._client is not None
         try:
@@ -182,6 +201,7 @@ class ReActAgent:
                 except Exception as exc:  # pragma: no cover - defensive runtime guard
                     logger.warning("Tool execution failed for %s", name, exc_info=True)
                     result = {"error": str(exc)}
+            self._onboarding.handle_tool_result(session_id, user_tag, name, parsed_arguments, result)
 
             self._history.add_message(
                 session_id,

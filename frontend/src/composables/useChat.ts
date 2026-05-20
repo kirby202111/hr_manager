@@ -16,6 +16,7 @@ export function useChat() {
     sessions: store.sessions,
     currentSessionId: store.currentSessionId,
     messages: store.messages,
+    onboardingCases: store.onboardingCases,
     userTag: store.userTag,
     isLoadingMessages: store.isLoadingMessages,
     isStreaming: store.isStreaming,

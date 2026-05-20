@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import type { BackendMessage, ChatMessage, ToolCallInfo } from '../types/chat'
+import type { BackendMessage, ChatMessage, OnboardingCaseSummary, ToolCallInfo } from '../types/chat'
 import * as chatApi from '../api/chat'
 import { streamChat } from '../api/sse'
 
@@ -55,6 +55,7 @@ export const useChatStore = defineStore('chat', () => {
   const currentSessionId = ref<string | null>(null)
   const messages = ref<Record<string, ChatMessage[]>>(loadFromStorage(STORAGE_KEY, {}))
   const userTag = ref<string>(loadFromStorage(USER_TAG_KEY, 'default'))
+  const onboardingCases = ref<Record<string, OnboardingCaseSummary | null>>({})
   const isLoadingMessages = ref(false)
   const isStreaming = ref(false)
   const streamingMessageId = ref<string | null>(null)
@@ -109,24 +110,36 @@ export const useChatStore = defineStore('chat', () => {
     } finally {
       isLoadingMessages.value = false
     }
+    await fetchSessionState(sessionId)
   }
 
   function createSession(): string {
     const id = generateId()
     sessions.value.unshift(id)
     messages.value[id] = []
+    onboardingCases.value[id] = null
     currentSessionId.value = id
     return id
   }
 
   async function deleteSession(sessionId: string) {
     try {
-      await chatApi.deleteSession(sessionId)
+      await chatApi.deleteSession(sessionId, userTag.value)
     } catch { /* ignore */ }
     sessions.value = sessions.value.filter(s => s !== sessionId)
     delete messages.value[sessionId]
+    delete onboardingCases.value[sessionId]
     if (currentSessionId.value === sessionId) {
       currentSessionId.value = sessions.value[0] || null
+    }
+  }
+
+  async function fetchSessionState(sessionId: string) {
+    try {
+      const { data } = await chatApi.getSessionState(sessionId, userTag.value)
+      onboardingCases.value[sessionId] = data.onboarding_case || null
+    } catch {
+      onboardingCases.value[sessionId] = null
     }
   }
 
@@ -191,16 +204,20 @@ export const useChatStore = defineStore('chat', () => {
               if (calling) calling.status = 'completed'
               else msg.toolCalls.push({ names, status: 'completed' })
             }
+            void fetchSessionState(sessionId!)
           },
           onDone(serverSessionId) {
             if (serverSessionId && sessionId !== serverSessionId) {
               messages.value[serverSessionId] = messages.value[sessionId!]
+              onboardingCases.value[serverSessionId] = onboardingCases.value[sessionId!] || null
               delete messages.value[sessionId!]
+              delete onboardingCases.value[sessionId!]
               const idx = sessions.value.indexOf(sessionId!)
               if (idx !== -1) sessions.value[idx] = serverSessionId
               currentSessionId.value = serverSessionId
               sessionId = serverSessionId
             }
+            void fetchSessionState(sessionId!)
             finalizeStream()
           },
           onError(error) {
@@ -250,6 +267,7 @@ export const useChatStore = defineStore('chat', () => {
     userTag.value = normalized
     sessions.value = []
     messages.value = {}
+    onboardingCases.value = {}
     currentSessionId.value = null
     await fetchSessions()
     if (currentSessionId.value) {
@@ -263,6 +281,7 @@ export const useChatStore = defineStore('chat', () => {
     sessions,
     currentSessionId,
     messages,
+    onboardingCases,
     userTag,
     isLoadingMessages,
     isStreaming,
@@ -271,6 +290,7 @@ export const useChatStore = defineStore('chat', () => {
     selectSession,
     createSession,
     deleteSession,
+    fetchSessionState,
     currentMessages,
     sendMessage,
     stopStreaming,
