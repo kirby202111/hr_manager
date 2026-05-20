@@ -1,35 +1,34 @@
-"""知识库数据填充脚本 - 导入电子车间示例文档"""
+"""Seed the local knowledge base with bundled sample documents."""
 
-import os
+from __future__ import annotations
+
 import sys
+from pathlib import Path
 
-# Ensure project root is on sys.path so `app` is importable
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.services.knowledge_base import add_document_from_file
-
-SAMPLE_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "knowledge_base", "sample_docs")
+SAMPLE_DIR = PROJECT_ROOT / "app" / "knowledge_base" / "sample_docs"
 
 
-def main():
-    if not os.path.isdir(SAMPLE_DIR):
+def main() -> None:
+    from app.agent.repositories.knowledge_base import get_repository
+    from app.agent.services.knowledge_base import add_document_from_file
+
+    if not SAMPLE_DIR.is_dir():
         print(f"Sample docs directory not found: {SAMPLE_DIR}")
         return
 
-    for filename in sorted(os.listdir(SAMPLE_DIR)):
-        if filename.endswith(".txt"):
-            filepath = os.path.join(SAMPLE_DIR, filename)
-            print(f"Ingesting: {filename} ...")
-            result = add_document_from_file(filepath)
-            if "error" in result:
-                print(f"  ERROR: {result['error']}")
-            else:
-                print(f"  OK: {result['chunk_count']} chunks, doc_id={result['doc_id']}")
+    for filepath in sorted(SAMPLE_DIR.glob("*.txt")):
+        print(f"Ingesting: {filepath.name} ...")
+        try:
+            result = add_document_from_file(str(filepath))
+        except Exception as exc:
+            print(f"  ERROR: {exc}")
+            continue
+        print(f"  OK: {result.chunk_count} chunks, doc_id={result.doc_id}")
 
-    from app.knowledge_base.vector_store import get_store
-
-    store = get_store()
-    print(f"\nTotal chunks in knowledge base: {store.get_chunk_count()}")
+    print(f"\nTotal chunks in knowledge base: {get_repository().get_chunk_count()}")
 
 
 if __name__ == "__main__":
