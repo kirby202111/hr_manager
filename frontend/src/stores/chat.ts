@@ -125,7 +125,9 @@ export const useChatStore = defineStore('chat', () => {
   async function deleteSession(sessionId: string) {
     try {
       await chatApi.deleteSession(sessionId, userTag.value)
-    } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
     sessions.value = sessions.value.filter(s => s !== sessionId)
     delete messages.value[sessionId]
     delete onboardingCases.value[sessionId]

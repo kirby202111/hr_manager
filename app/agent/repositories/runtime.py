@@ -203,6 +203,26 @@ def get_active_onboarding_case(
         return row.to_dict() if row else None
 
 
+def get_latest_onboarding_case(
+    session_id: str,
+    user_tag: str,
+    intent: str = "worker_onboarding",
+    db: Session | None = None,
+) -> dict | None:
+    with db_session(db) as session:
+        row = (
+            session.query(OnboardingCase)
+            .filter(
+                OnboardingCase.session_id == session_id,
+                OnboardingCase.user_tag == user_tag,
+                OnboardingCase.intent == intent,
+            )
+            .order_by(OnboardingCase.updated_at.desc(), OnboardingCase.id.desc())
+            .first()
+        )
+        return row.to_dict() if row else None
+
+
 def create_onboarding_case(data: dict, db: Session | None = None) -> dict:
     with db_session(db) as session:
         row = OnboardingCase(**data)
@@ -303,6 +323,7 @@ __all__ = [
     "delete_memory",
     "delete_messages_by_session",
     "get_active_onboarding_case",
+    "get_latest_onboarding_case",
     "get_memory_by_id",
     "get_messages_by_session",
     "get_reminders_by_memory",

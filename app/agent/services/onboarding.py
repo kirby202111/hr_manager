@@ -144,6 +144,15 @@ def get_active_case(
     return _case_to_response(row, db) if row else None
 
 
+def get_latest_case(
+    session_id: str,
+    user_tag: str,
+    db: Session | None = None,
+) -> OnboardingCaseResponse | None:
+    row = runtime_repo.get_latest_onboarding_case(session_id, user_tag, ONBOARDING_INTENT, db)
+    return _case_to_response(row, db) if row else None
+
+
 def upsert_case(
     session_id: str,
     user_tag: str,
@@ -199,7 +208,7 @@ def reset_case(session_id: str, user_tag: str, db: Session | None = None) -> dic
 def get_session_state(session_id: str, user_tag: str, db: Session | None = None) -> SessionStateResponse:
     return SessionStateResponse(
         session_id=session_id,
-        onboarding_case=get_active_case(session_id, user_tag, db),
+        onboarding_case=get_latest_case(session_id, user_tag, db),
     )
 
 
@@ -396,6 +405,7 @@ __all__ = [
     "REQUIRED_FIELDS",
     "find_worker_candidates",
     "get_active_case",
+    "get_latest_case",
     "get_session_state",
     "get_worker_qualification_summary",
     "get_workstation_requirements",

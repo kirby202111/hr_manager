@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Callable
-from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from dataclasses import asdict, dataclass, field
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from fastapi import HTTPException
 
@@ -46,6 +46,38 @@ class ToolExecutionContext:
     user_tag: str
 
 
+ToolMatchType = Literal["forced", "strong", "fallback"]
+ToolResultStatus = Literal["success", "needs_input", "blocked", "error"]
+
+
+@dataclass(slots=True)
+class SkillMatch:
+    """Structured routing decision for a skill."""
+
+    skill_name: str
+    reason: str
+    priority: int
+    match_type: ToolMatchType
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(slots=True)
+class ToolResultEnvelope:
+    """Normalized tool result passed back to the model and orchestrators."""
+
+    status: ToolResultStatus
+    summary: str
+    data: Any
+    next_action_hint: str | None = None
+    requires_confirmation: bool = False
+    error_type: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 @dataclass(slots=True)
 class AgentTool:
     """Function-callable agent tool."""
@@ -55,6 +87,9 @@ class AgentTool:
     parameters: dict[str, Any]
     fn: Callable[..., Any]
     context_defaults: dict[str, str] = field(default_factory=dict)
+    requires_confirmation: bool = False
+    confirmation_argument: str = "confirm"
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_openai_tool(self) -> dict[str, Any]:
         return {
@@ -70,6 +105,11 @@ class AgentTool:
         payload = dict(arguments)
         for argument_name, context_field in self.context_defaults.items():
             payload.setdefault(argument_name, getattr(context, context_field))
+        properties = self.parameters.get("properties", {}) if isinstance(self.parameters, dict) else {}
+        if "session_id" in properties:
+            payload.setdefault("session_id", context.session_id)
+        if "user_tag" in properties:
+            payload.setdefault("user_tag", context.user_tag)
         return self.fn(**payload)
 
 
@@ -91,7 +131,33 @@ class AgentSkill:
             "description": self.description,
             "applicability": self.applicability,
             "enabled": self.enabled,
+            "metadata": self.metadata,
         }
+
+
+@runtime_checkable
+class BaseOrchestrator(Protocol):
+    """Runtime hook interface for multi-step task orchestration."""
+
+    name: str
+    priority: int
+
+    def should_handle(self, message: str, session_id: str, user_tag: str) -> bool: ...
+
+    def forced_skills(self, session_id: str, user_tag: str, message: str) -> list[str]: ...
+
+    def prepare_turn(self, session_id: str, user_tag: str, message: str) -> None: ...
+
+    def build_runtime_summary(self, session_id: str, user_tag: str) -> str | None: ...
+
+    def handle_tool_result(
+        self,
+        session_id: str,
+        user_tag: str,
+        tool_name: str,
+        arguments: dict[str, Any],
+        result: ToolResultEnvelope,
+    ) -> None: ...
 
 
 def safe_call(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
@@ -118,6 +184,9 @@ __all__ = [
     "AgentTool",
     "BaseAgent",
     "BaseHistoryStore",
+    "BaseOrchestrator",
+    "SkillMatch",
     "ToolExecutionContext",
+    "ToolResultEnvelope",
     "safe_call",
 ]

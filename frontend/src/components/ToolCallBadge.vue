@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { Loading, CircleCheck } from '@element-plus/icons-vue'
+import { CircleCheck, Loading } from '@element-plus/icons-vue'
 import type { ToolCallInfo } from '../types/chat'
 
 defineProps<{
@@ -56,6 +56,8 @@ function labelForTool(name: string) {
 }
 
 .badge-tag {
-  .el-icon { margin-right: 4px; }
+  .el-icon {
+    margin-right: 4px;
+  }
 }
 </style>

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.agent.protocol import AgentSkill, AgentTool
+from app.agent.protocol import AgentSkill, AgentTool, SkillMatch
 
 
 class SkillRegistry:
@@ -39,11 +39,19 @@ class SkillRegistry:
 
     def get_tools_for_skills(self, skill_names: list[str]) -> list[AgentTool]:
         tools: list[AgentTool] = []
+        seen: set[str] = set()
         for skill_name in skill_names:
             skill = self._skills.get(skill_name)
             if skill and skill.enabled:
-                tools.extend(skill.tools)
+                for tool in skill.tools:
+                    if tool.name in seen:
+                        continue
+                    seen.add(tool.name)
+                    tools.append(tool)
         return tools
+
+    def get_tools_for_matches(self, matches: list[SkillMatch]) -> list[AgentTool]:
+        return self.get_tools_for_skills([match.skill_name for match in matches])
 
     def list_skills(self) -> list[dict]:
         return [skill.to_summary() for skill in self._skills.values()]
